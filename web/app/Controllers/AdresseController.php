@@ -1,98 +1,56 @@
 <?php
+require_once __DIR__ . '/../Models/Adresse.php';
 
-namespace App\Controllers;
-
-use App\Models\Adresse;
-use App\Models\Arrondissement;
-
-class AdresseController
-{
+class AdresseController {
     private Adresse $model;
-    private Arrondissement $arrModel;
 
-    public function __construct()
-    {
-        $this->model    = new Adresse();
-        $this->arrModel = new Arrondissement();
+    public function __construct() {
+        $this->model = new Adresse();
     }
 
-    public function index(): void
-    {
+    public function index(): void {
         $adresses = $this->model->getAll();
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/adresses/index.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function create(): void
-    {
-        $arrondissements = $this->arrModel->getAll();
-        $errors = [];
-        $data   = ['LibAdr' => '', 'arrondissement_id' => ''];
-
+    public function create(): void {
+        $adresse = ['id' => null, 'libelle' => ''];
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = [
-                'LibAdr'            => trim($_POST['LibAdr'] ?? ''),
-                'arrondissement_id' => $_POST['arrondissement_id'] ?? '',
-            ];
-
-            if ($data['LibAdr'] === '') {
-                $errors[] = 'العنوان مطلوب';
-            } else {
-                $this->model->create($data);
-                header('Location: index.php?page=adresses&msg=created');
+            $data = ['libelle' => trim($_POST['libelle'] ?? '')];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->create($data)) {
+                header('Location: index.php?page=adresses');
                 exit;
-            }
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/adresses/create.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/adresses/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function edit(int $id): void
-    {
-        $adresse         = $this->model->getById($id);
-        $arrondissements = $this->arrModel->getAll();
-
-        if (!$adresse) {
-            http_response_code(404);
-            exit('العنوان غير موجود');
-        }
-
-        $errors = [];
-
+    public function edit(int $id): void {
+        $adresse = $this->model->getById($id);
+        if (!$adresse) { header('Location: index.php?page=adresses'); exit; }
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = [
-                'LibAdr'            => trim($_POST['LibAdr'] ?? ''),
-                'arrondissement_id' => $_POST['arrondissement_id'] ?? '',
-            ];
-
-            if ($data['LibAdr'] === '') {
-                $errors[] = 'العنوان مطلوب';
-            } else {
-                $this->model->update($id, $data);
-                header('Location: index.php?page=adresses&msg=updated');
+            $data = ['libelle' => trim($_POST['libelle'] ?? '')];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->update($id, $data)) {
+                header('Location: index.php?page=adresses');
                 exit;
-            }
-            $adresse = array_merge($adresse, $data);
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/adresses/edit.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/adresses/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function delete(int $id): void
-    {
-        $this->verifyCsrf();
+    public function delete(int $id): void {
         $this->model->delete($id);
-        header('Location: index.php?page=adresses&msg=deleted');
+        header('Location: index.php?page=adresses');
         exit;
-    }
-
-    private function verifyCsrf(): void
-    {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
-            http_response_code(403);
-            exit('طلب غير صالح');
-        }
     }
 }

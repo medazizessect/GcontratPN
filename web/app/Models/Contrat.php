@@ -1,198 +1,109 @@
 <?php
+require_once __DIR__ . '/Database.php';
 
-namespace App\Models;
-
-use PDO;
-
-class Contrat
-{
+class Contrat {
     private PDO $db;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->db = Database::getInstance()->getConnection();
     }
 
-    public function countAll(): int
-    {
-        $stmt = $this->db->query('SELECT COUNT(*) FROM contrats');
-        return (int) $stmt->fetchColumn();
-    }
-
-    public function getAll(int $limit = 100, int $offset = 0): array
-    {
-        $stmt = $this->db->prepare(
-            'SELECT c.*, a.LibAct, adr.LibAdr
-             FROM contrats c
-             LEFT JOIN activites a ON c.CodeAct = a.CodeAct
-             LEFT JOIN adresses adr ON c.CodeAdr = adr.CodeAdr
-             ORDER BY c.created_at DESC
-             LIMIT :limit OFFSET :offset'
-        );
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    public function getAll(int $page = 1, int $perPage = 10, string $search = ''): array {
+        $offset = ($page - 1) * $perPage;
+        $params = [];
+        $where = '';
+        if ($search !== '') {
+            $where = "WHERE c.num_contrat LIKE :s OR c.nom LIKE :s OR c.prenom LIKE :s OR c.cin LIKE :s";
+            $params[':s'] = '%' . $search . '%';
+        }
+        $sql = "SELECT c.*, act.libelle AS activite_libelle, adr.libelle AS adresse_libelle,
+                       arr.libelle AS arrondissement_libelle, cat.libelle AS categorie_libelle
+                FROM contrats c
+                LEFT JOIN activites act ON c.activite_id = act.id
+                LEFT JOIN adresses adr ON c.adresse_id = adr.id
+                LEFT JOIN arrondissements arr ON c.arrondissement_id = arr.id
+                LEFT JOIN categories cat ON c.categorie_id = cat.id
+                $where
+                ORDER BY c.created_at DESC
+                LIMIT :limit OFFSET :offset";
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll();
     }
 
-    public function getById(int $id): array|false
-    {
+    public function countAll(string $search = ''): int {
+        $params = [];
+        $where = '';
+        if ($search !== '') {
+            $where = "WHERE num_contrat LIKE :s OR nom LIKE :s OR prenom LIKE :s OR cin LIKE :s";
+            $params[':s'] = '%' . $search . '%';
+        }
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM contrats $where");
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function getById(int $id): array|false {
         $stmt = $this->db->prepare(
-            'SELECT c.*, a.LibAct, adr.LibAdr
+            "SELECT c.*, act.libelle AS activite_libelle, adr.libelle AS adresse_libelle,
+                    arr.libelle AS arrondissement_libelle, cat.libelle AS categorie_libelle
              FROM contrats c
-             LEFT JOIN activites a ON c.CodeAct = a.CodeAct
-             LEFT JOIN adresses adr ON c.CodeAdr = adr.CodeAdr
-             WHERE c.id = :id'
+             LEFT JOIN activites act ON c.activite_id = act.id
+             LEFT JOIN adresses adr ON c.adresse_id = adr.id
+             LEFT JOIN arrondissements arr ON c.arrondissement_id = arr.id
+             LEFT JOIN categories cat ON c.categorie_id = cat.id
+             WHERE c.id = :id"
         );
         $stmt->execute([':id' => $id]);
         return $stmt->fetch();
     }
 
-    public function search(array $filters, int $limit = 100, int $offset = 0): array
-    {
-        $where = [];
-        $params = [];
-
-        if (!empty($filters['Numero'])) {
-            $where[] = 'c.Numero LIKE :Numero';
-            $params[':Numero'] = '%' . $filters['Numero'] . '%';
-        }
-        if (!empty($filters['nom'])) {
-            $where[] = 'c.nom LIKE :nom';
-            $params[':nom'] = '%' . $filters['nom'] . '%';
-        }
-        if (!empty($filters['CIN'])) {
-            $where[] = 'c.CIN LIKE :CIN';
-            $params[':CIN'] = '%' . $filters['CIN'] . '%';
-        }
-        if (isset($filters['Signature']) && $filters['Signature'] !== '') {
-            $where[] = 'c.Signature = :Signature';
-            $params[':Signature'] = (int) $filters['Signature'];
-        }
-        if (!empty($filters['DateD_from'])) {
-            $where[] = 'c.DateD >= :DateD_from';
-            $params[':DateD_from'] = $filters['DateD_from'];
-        }
-        if (!empty($filters['DateD_to'])) {
-            $where[] = 'c.DateD <= :DateD_to';
-            $params[':DateD_to'] = $filters['DateD_to'];
-        }
-        if (!empty($filters['AnneeExc'])) {
-            $where[] = 'c.AnneeExc = :AnneeExc';
-            $params[':AnneeExc'] = $filters['AnneeExc'];
-        }
-
-        $sql = 'SELECT c.*, a.LibAct, adr.LibAdr
-                FROM contrats c
-                LEFT JOIN activites a ON c.CodeAct = a.CodeAct
-                LEFT JOIN adresses adr ON c.CodeAdr = adr.CodeAdr';
-
-        if (!empty($where)) {
-            $sql .= ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $sql .= ' ORDER BY c.created_at DESC';
-
-        $countSql = 'SELECT COUNT(*) FROM (' . $sql . ') sub';
-        $countStmt = $this->db->prepare($countSql);
-        $countStmt->execute($params);
-        $total = (int) $countStmt->fetchColumn();
-
-        $sql .= ' LIMIT :limit OFFSET :offset';
-        $stmt = $this->db->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value);
-        }
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
-
-        return ['data' => $stmt->fetchAll(), 'total' => $total];
-    }
-
-    public function create(array $data): int
-    {
+    public function create(array $data): bool {
         $stmt = $this->db->prepare(
-            'INSERT INTO contrats
-             (Numero, nom, CIN, Telephone, MatriculeFis, NomCom, CodeAct, CodeAdr,
-              DateD, DateSignature, Signature, DateRetour, Retour,
-              DateEnr, NumeroEnr, MontantEnr, ValidEnr,
-              AnneeExc, MontantExc, Quantite, MontantAnn, NbrJour, MontantLit,
-              NumOrd, NomPresident, observation)
-             VALUES
-             (:Numero, :nom, :CIN, :Telephone, :MatriculeFis, :NomCom, :CodeAct, :CodeAdr,
-              :DateD, :DateSignature, :Signature, :DateRetour, :Retour,
-              :DateEnr, :NumeroEnr, :MontantEnr, :ValidEnr,
-              :AnneeExc, :MontantExc, :Quantite, :MontantAnn, :NbrJour, :MontantLit,
-              :NumOrd, :NomPresident, :observation)'
+            "INSERT INTO contrats (num_contrat, nom, prenom, cin, telephone, adresse_id, arrondissement_id,
+             activite_id, categorie_id, date_contrat, date_debut, date_fin, montant, montant_paye, observation, statut)
+             VALUES (:num_contrat, :nom, :prenom, :cin, :telephone, :adresse_id, :arrondissement_id,
+             :activite_id, :categorie_id, :date_contrat, :date_debut, :date_fin, :montant, :montant_paye, :observation, :statut)"
         );
-        $stmt->execute($this->sanitize($data));
-        return (int) $this->db->lastInsertId();
+        return $stmt->execute($data);
     }
 
-    public function update(int $id, array $data): bool
-    {
+    public function update(int $id, array $data): bool {
+        $data[':id'] = $id;
         $stmt = $this->db->prepare(
-            'UPDATE contrats SET
-             Numero=:Numero, nom=:nom, CIN=:CIN, Telephone=:Telephone,
-             MatriculeFis=:MatriculeFis, NomCom=:NomCom, CodeAct=:CodeAct, CodeAdr=:CodeAdr,
-             DateD=:DateD, DateSignature=:DateSignature, Signature=:Signature,
-             DateRetour=:DateRetour, Retour=:Retour,
-             DateEnr=:DateEnr, NumeroEnr=:NumeroEnr, MontantEnr=:MontantEnr, ValidEnr=:ValidEnr,
-             AnneeExc=:AnneeExc, MontantExc=:MontantExc, Quantite=:Quantite,
-             MontantAnn=:MontantAnn, NbrJour=:NbrJour, MontantLit=:MontantLit,
-             NumOrd=:NumOrd, NomPresident=:NomPresident, observation=:observation
-             WHERE id=:id'
+            "UPDATE contrats SET num_contrat=:num_contrat, nom=:nom, prenom=:prenom, cin=:cin,
+             telephone=:telephone, adresse_id=:adresse_id, arrondissement_id=:arrondissement_id,
+             activite_id=:activite_id, categorie_id=:categorie_id, date_contrat=:date_contrat,
+             date_debut=:date_debut, date_fin=:date_fin, montant=:montant, montant_paye=:montant_paye,
+             observation=:observation, statut=:statut WHERE id=:id"
         );
-        $params = $this->sanitize($data);
-        $params[':id'] = $id;
-        return $stmt->execute($params);
+        return $stmt->execute($data);
     }
 
-    public function delete(int $id): bool
-    {
+    public function delete(int $id): bool {
         $stmt = $this->db->prepare('DELETE FROM contrats WHERE id = :id');
         return $stmt->execute([':id' => $id]);
     }
 
-    public function countBySigned(): array
-    {
-        $stmt = $this->db->query(
-            'SELECT
-               SUM(Signature = 1) AS signes,
-               SUM(Signature = 0) AS non_signes
-             FROM contrats'
-        );
-        return $stmt->fetch();
+    public function countBySigned(): array {
+        $stmt = $this->db->query("SELECT statut, COUNT(*) AS total FROM contrats GROUP BY statut");
+        $rows = $stmt->fetchAll();
+        $result = ['signed' => 0, 'unsigned' => 0];
+        foreach ($rows as $row) {
+            $result[$row['statut']] = (int) $row['total'];
+        }
+        return $result;
     }
 
-    public function countThisMonth(): int
-    {
+    public function countThisMonth(): int {
         $stmt = $this->db->query(
-            'SELECT COUNT(*) FROM contrats
-             WHERE YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())'
+            "SELECT COUNT(*) FROM contrats WHERE MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())"
         );
         return (int) $stmt->fetchColumn();
-    }
-
-    private function sanitize(array $data): array
-    {
-        $fields = [
-            'Numero', 'nom', 'CIN', 'Telephone', 'MatriculeFis', 'NomCom',
-            'CodeAct', 'CodeAdr', 'DateD', 'DateSignature', 'Signature',
-            'DateRetour', 'Retour', 'DateEnr', 'NumeroEnr', 'MontantEnr',
-            'ValidEnr', 'AnneeExc', 'MontantExc', 'Quantite', 'MontantAnn',
-            'NbrJour', 'MontantLit', 'NumOrd', 'NomPresident', 'observation',
-        ];
-        $params = [];
-        foreach ($fields as $field) {
-            $value = $data[$field] ?? null;
-            // Convert empty strings to null for numeric/date fields
-            if ($value === '') {
-                $value = null;
-            }
-            $params[':' . $field] = $value;
-        }
-        return $params;
     }
 }

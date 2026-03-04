@@ -1,86 +1,56 @@
 <?php
+require_once __DIR__ . '/../Models/Categorie.php';
 
-namespace App\Controllers;
-
-use App\Models\Categorie;
-
-class CategorieController
-{
+class CategorieController {
     private Categorie $model;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->model = new Categorie();
     }
 
-    public function index(): void
-    {
+    public function index(): void {
         $categories = $this->model->getAll();
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/categories/index.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function create(): void
-    {
-        $errors = [];
-        $data   = ['LibCat' => ''];
-
+    public function create(): void {
+        $categorie = ['id' => null, 'libelle' => '', 'montant' => 0];
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = ['LibCat' => trim($_POST['LibCat'] ?? '')];
-
-            if ($data['LibCat'] === '') {
-                $errors[] = 'اسم الفئة مطلوب';
-            } else {
-                $this->model->create($data);
-                header('Location: index.php?page=categories&msg=created');
+            $data = ['libelle' => trim($_POST['libelle'] ?? ''), 'montant' => (float)($_POST['montant'] ?? 0)];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->create($data)) {
+                header('Location: index.php?page=categories');
                 exit;
-            }
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/categories/create.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/categories/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function edit(int $id): void
-    {
+    public function edit(int $id): void {
         $categorie = $this->model->getById($id);
-        if (!$categorie) {
-            http_response_code(404);
-            exit('الفئة غير موجودة');
-        }
-
-        $errors = [];
-
+        if (!$categorie) { header('Location: index.php?page=categories'); exit; }
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = ['LibCat' => trim($_POST['LibCat'] ?? '')];
-
-            if ($data['LibCat'] === '') {
-                $errors[] = 'اسم الفئة مطلوب';
-            } else {
-                $this->model->update($id, $data);
-                header('Location: index.php?page=categories&msg=updated');
+            $data = ['libelle' => trim($_POST['libelle'] ?? ''), 'montant' => (float)($_POST['montant'] ?? 0)];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->update($id, $data)) {
+                header('Location: index.php?page=categories');
                 exit;
-            }
-            $categorie['LibCat'] = $data['LibCat'];
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/categories/edit.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/categories/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function delete(int $id): void
-    {
-        $this->verifyCsrf();
+    public function delete(int $id): void {
         $this->model->delete($id);
-        header('Location: index.php?page=categories&msg=deleted');
+        header('Location: index.php?page=categories');
         exit;
-    }
-
-    private function verifyCsrf(): void
-    {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
-            http_response_code(403);
-            exit('طلب غير صالح');
-        }
     }
 }
