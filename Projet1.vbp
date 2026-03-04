@@ -1,0 +1,52 @@
+Type=Exe
+
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; C:\Program Files (x86)\VBReFormer\Lib\MSCOMCTL.OCX
+Object={CDE57A40-8B86-11D0-B3C6-00A0C90AEA82}#1.0#0; C:\WINDOWS\SysWow64\MSDATGRD.OCX
+Object={F0D2F211-CCB0-11D0-A316-00AA00688B10}#1.0#0; C:\WINDOWS\SysWow64\MSDATLST.OCX
+Object={0D452EE1-E08F-101A-852E-02608C4D0BB4}#2.0#0; C:\WINDOWS\SysWow64\FM20.DLL
+Object={F32D2BB7-65DF-400D-AA23-E1A03E7510C4}#2.0#0; C:\WINDOWS\SysWow64\Di6InputBox.ocx
+Object={00025600-0000-0000-C000-000000000046}#5.2#0; C:\WINDOWS\SysWow64\Crystl32.OCX
+
+Form=Menu.frm
+Form=MotPasse.frm
+Form=Message.frm
+Form=FArrondissement.frm
+Form=GFiche.frm
+Form=GActivite.frm
+Form=FActivite.frm
+Form=GCategorie.frm
+Form=FCategorie.frm
+Form=FFiche.frm
+Form=Choix.frm
+Form=GAdresse.frm
+Form=Fcalcul.frm
+Form=MotP.frm
+Form=FAdresse.frm
+Form=GArrondissement.frm
+Form=CFiche.frm
+Form=PremEcr.frm
+
+Startup="PremEcr"
+Name="Projet1"
+Title="GContratP"
+Description=""
+HelpFile=""
+HelpContextID="0"
+ExeName32="GContratP"
+CompilationType=0 'Native
+StartMode=0
+RequireLicenseKey=0
+Unattended=0
+Retained=0
+ThreadPerObject=0
+MaxNumberOfThreads=1
+OptimizationType=0
+FavorPentiumPro(tm)=0
+CodeViewDebugInfo=0
+NoAliasing=0
+BoundsCheck=0
+OverflowCheck=0
+FlPointCheck=0
+FDIVCheck=0
+UnroundedFP=0
+

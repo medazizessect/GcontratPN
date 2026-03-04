@@ -1,0 +1,65 @@
+Type=Exe
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\SYSTEM32\STDOLE2.TLB#OLE Automation
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
+Object={CDE57A40-8B86-11D0-B3C6-00A0C90AEA82}#1.0#0; MSDATGRD.OCX
+Object={F0D2F211-CCB0-11D0-A316-00AA00688B10}#1.0#0; MSDATLST.OCX
+Reference=*\G{0D452EE1-E08F-101A-852E-02608C4D0BB4}#2.0#0#FM20.DLL#0#CheckBox
+Object={F32D2BB7-65DF-400D-AA23-E1A03E7510C4}#2.0#0; Di6InputBox.ocx
+Object={00025600-0000-0000-C000-000000000046}#5.2#0; Crystl32.OCX
+Form=Menu.frm
+Form=MotPasse.frm
+Module=Module1; Module1.bas
+Form=Message.frm
+Form=FArrondissement.frm
+Form=GFiche.frm
+Form=GActivite.frm
+Form=FActivite.frm
+Form=GCategorie.frm
+Form=FCategorie.frm
+Form=FFiche.frm
+Form=Choix.frm
+Form=GAdresse.frm
+Form=Fcalcul.frm
+Form=MotP.frm
+Form=FAdresse.frm
+Form=GArrondissement.frm
+Form=CFiche.frm
+Form=PremEcr.frm
+Startup="PremEcr"
+IconForm="PremEcr"
+HelpFile=""
+ExeName32="GContratP.exe"
+Name="Projet1"
+Title="GContratP"
+VersionCompanyName="MUNICIPALITE DE SOUSSE"
+MajorVer=1
+MinorVer=00
+RevisionVer=0
+Command32 = ""
+HelpContextID = "0"
+CompatibleMode = "0"
+AutoIncrementVer = 0
+ServerSupportFiles = 0
+CompilationType = 0
+OptimizationType = 0
+FavorPentiumPro(tm) = 0
+CodeViewDebugInfo = 0
+NoAliasing = 0
+BoundsCheck = 0
+OverflowCheck = -1
+FlPointCheck = 0
+FDIVCheck = 0
+UnroundedFP = 0
+StartMode = 0
+Unattended = 0
+Retained = 0
+ThreadPerObject = 0
+MaxNumberOfThreads = 1
+
+[MS Transaction Server]
+AutoRefresh = 1
+
+[VB Decompiler]
+Build = 26.0.9537.32035
+Date = 04/03/2026
+
