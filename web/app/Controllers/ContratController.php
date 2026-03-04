@@ -1,172 +1,107 @@
 <?php
+require_once __DIR__ . '/../Models/Contrat.php';
+require_once __DIR__ . '/../Models/Activite.php';
+require_once __DIR__ . '/../Models/Adresse.php';
+require_once __DIR__ . '/../Models/Arrondissement.php';
+require_once __DIR__ . '/../Models/Categorie.php';
 
-namespace App\Controllers;
-
-use App\Models\Contrat;
-use App\Models\Activite;
-use App\Models\Adresse;
-
-class ContratController
-{
+class ContratController {
     private Contrat $model;
-    private Activite $activiteModel;
-    private Adresse $adresseModel;
 
-    public function __construct()
-    {
-        $this->model         = new Contrat();
-        $this->activiteModel = new Activite();
-        $this->adresseModel  = new Adresse();
+    public function __construct() {
+        $this->model = new Contrat();
     }
 
-    public function index(): void
-    {
-        $filters = [
-            'Numero'     => trim($_GET['Numero'] ?? ''),
-            'nom'        => trim($_GET['nom'] ?? ''),
-            'CIN'        => trim($_GET['CIN'] ?? ''),
-            'Signature'  => $_GET['Signature'] ?? '',
-            'DateD_from' => $_GET['DateD_from'] ?? '',
-            'DateD_to'   => $_GET['DateD_to'] ?? '',
-            'AnneeExc'   => $_GET['AnneeExc'] ?? '',
-        ];
-
-        $page    = max(1, (int) ($_GET['p'] ?? 1));
-        $perPage = 20;
-        $offset  = ($page - 1) * $perPage;
-
-        $result   = $this->model->search($filters, $perPage, $offset);
-        $contrats = $result['data'];
-        $total    = $result['total'];
-        $pages    = (int) ceil($total / $perPage);
-
+    public function index(): void {
+        $search  = trim($_GET['search'] ?? '');
+        $page    = max(1, (int)($_GET['p'] ?? 1));
+        $perPage = 10;
+        $contrats = $this->model->getAll($page, $perPage, $search);
+        $total    = $this->model->countAll($search);
+        $pages    = (int)ceil($total / $perPage);
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/contrats/index.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function create(): void
-    {
-        $activites = $this->activiteModel->getAll();
-        $adresses  = $this->adresseModel->getAll();
-        $errors    = [];
-        $data      = [];
-
+    public function create(): void {
+        $activites      = (new Activite())->getAll();
+        $adresses       = (new Adresse())->getAll();
+        $arrondissements = (new Arrondissement())->getAll();
+        $categories     = (new Categorie())->getAll();
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data   = $this->getPostData();
-            $errors = $this->validate($data);
-
-            if (empty($errors)) {
-                $id = $this->model->create($data);
-                header('Location: index.php?page=contrats&action=show&id=' . $id . '&msg=created');
+            $data = $this->extractData();
+            if ($this->model->create($data)) {
+                header('Location: index.php?page=contrats');
                 exit;
             }
+            $error = 'حدث خطأ أثناء الحفظ';
         }
-
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/contrats/create.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function edit(int $id): void
-    {
+    public function edit(int $id): void {
         $contrat = $this->model->getById($id);
-        if (!$contrat) {
-            http_response_code(404);
-            exit('الملف غير موجود');
-        }
-
-        $activites = $this->activiteModel->getAll();
-        $adresses  = $this->adresseModel->getAll();
-        $errors    = [];
-
+        if (!$contrat) { header('Location: index.php?page=contrats'); exit; }
+        $activites       = (new Activite())->getAll();
+        $adresses        = (new Adresse())->getAll();
+        $arrondissements = (new Arrondissement())->getAll();
+        $categories      = (new Categorie())->getAll();
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data    = $this->getPostData();
-            $errors  = $this->validate($data);
-
-            if (empty($errors)) {
-                $this->model->update($id, $data);
-                header('Location: index.php?page=contrats&action=show&id=' . $id . '&msg=updated');
+            $data = $this->extractData();
+            if ($this->model->update($id, $data)) {
+                header('Location: index.php?page=contrats');
                 exit;
             }
-            $contrat = array_merge($contrat, $data);
+            $error = 'حدث خطأ أثناء الحفظ';
         }
-
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/contrats/edit.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function show(int $id): void
-    {
+    public function show(int $id): void {
         $contrat = $this->model->getById($id);
-        if (!$contrat) {
-            http_response_code(404);
-            exit('الملف غير موجود');
-        }
+        if (!$contrat) { header('Location: index.php?page=contrats'); exit; }
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/contrats/show.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function delete(int $id): void
-    {
-        $this->verifyCsrf();
+    public function delete(int $id): void {
         $this->model->delete($id);
-        header('Location: index.php?page=contrats&msg=deleted');
+        header('Location: index.php?page=contrats');
         exit;
     }
 
-    public function imprimer(int $id): void
-    {
-        $controller = new RapportController();
-        $controller->imprimerContrat($id);
+    public function imprimer(int $id): void {
+        $contrat = $this->model->getById($id);
+        if (!$contrat) { header('Location: index.php?page=contrats'); exit; }
+        require __DIR__ . '/../Views/rapports/contrat.php';
     }
 
-    private function getPostData(): array
-    {
+    private function extractData(): array {
         return [
-            'Numero'       => trim($_POST['Numero'] ?? ''),
-            'nom'          => trim($_POST['nom'] ?? ''),
-            'CIN'          => trim($_POST['CIN'] ?? ''),
-            'Telephone'    => trim($_POST['Telephone'] ?? ''),
-            'MatriculeFis' => trim($_POST['MatriculeFis'] ?? ''),
-            'NomCom'       => trim($_POST['NomCom'] ?? ''),
-            'CodeAct'      => $_POST['CodeAct'] ?? null,
-            'CodeAdr'      => $_POST['CodeAdr'] ?? null,
-            'DateD'        => $_POST['DateD'] ?? '',
-            'DateSignature'=> $_POST['DateSignature'] ?? '',
-            'Signature'    => isset($_POST['Signature']) ? 1 : 0,
-            'DateRetour'   => $_POST['DateRetour'] ?? '',
-            'Retour'       => isset($_POST['Retour']) ? 1 : 0,
-            'DateEnr'      => $_POST['DateEnr'] ?? '',
-            'NumeroEnr'    => trim($_POST['NumeroEnr'] ?? ''),
-            'MontantEnr'   => $_POST['MontantEnr'] ?? '',
-            'ValidEnr'     => isset($_POST['ValidEnr']) ? 1 : 0,
-            'AnneeExc'     => $_POST['AnneeExc'] ?? '',
-            'MontantExc'   => $_POST['MontantExc'] ?? '',
-            'Quantite'     => $_POST['Quantite'] ?? '',
-            'MontantAnn'   => $_POST['MontantAnn'] ?? '',
-            'NbrJour'      => $_POST['NbrJour'] ?? '',
-            'MontantLit'   => $_POST['MontantLit'] ?? '',
-            'NumOrd'       => trim($_POST['NumOrd'] ?? ''),
-            'NomPresident' => trim($_POST['NomPresident'] ?? ''),
-            'observation'  => trim($_POST['observation'] ?? ''),
+            ':num_contrat'       => trim($_POST['num_contrat'] ?? ''),
+            ':nom'               => trim($_POST['nom'] ?? ''),
+            ':prenom'            => trim($_POST['prenom'] ?? ''),
+            ':cin'               => trim($_POST['cin'] ?? ''),
+            ':telephone'         => trim($_POST['telephone'] ?? ''),
+            ':adresse_id'        => ($_POST['adresse_id'] ?? '') !== '' ? (int)$_POST['adresse_id'] : null,
+            ':arrondissement_id' => ($_POST['arrondissement_id'] ?? '') !== '' ? (int)$_POST['arrondissement_id'] : null,
+            ':activite_id'       => ($_POST['activite_id'] ?? '') !== '' ? (int)$_POST['activite_id'] : null,
+            ':categorie_id'      => ($_POST['categorie_id'] ?? '') !== '' ? (int)$_POST['categorie_id'] : null,
+            ':date_contrat'      => ($_POST['date_contrat'] ?? '') ?: null,
+            ':date_debut'        => ($_POST['date_debut'] ?? '') ?: null,
+            ':date_fin'          => ($_POST['date_fin'] ?? '') ?: null,
+            ':montant'           => (float)($_POST['montant'] ?? 0),
+            ':montant_paye'      => (float)($_POST['montant_paye'] ?? 0),
+            ':observation'       => trim($_POST['observation'] ?? ''),
+            ':statut'            => in_array($_POST['statut'] ?? '', ['signed', 'unsigned']) ? $_POST['statut'] : 'unsigned',
         ];
-    }
-
-    private function validate(array $data): array
-    {
-        $errors = [];
-        if ($data['Numero'] === '') {
-            $errors[] = 'رقم العقد مطلوب';
-        }
-        if ($data['nom'] === '') {
-            $errors[] = 'الاسم مطلوب';
-        }
-        return $errors;
-    }
-
-    private function verifyCsrf(): void
-    {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
-            http_response_code(403);
-            exit('طلب غير صالح');
-        }
     }
 }

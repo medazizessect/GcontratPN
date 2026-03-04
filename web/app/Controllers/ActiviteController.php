@@ -1,86 +1,56 @@
 <?php
+require_once __DIR__ . '/../Models/Activite.php';
 
-namespace App\Controllers;
-
-use App\Models\Activite;
-
-class ActiviteController
-{
+class ActiviteController {
     private Activite $model;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->model = new Activite();
     }
 
-    public function index(): void
-    {
+    public function index(): void {
         $activites = $this->model->getAll();
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/activites/index.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function create(): void
-    {
-        $errors = [];
-        $data   = ['LibAct' => ''];
-
+    public function create(): void {
+        $activite = ['id' => null, 'libelle' => ''];
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = ['LibAct' => trim($_POST['LibAct'] ?? '')];
-
-            if ($data['LibAct'] === '') {
-                $errors[] = 'اسم النشاط مطلوب';
-            } else {
-                $this->model->create($data);
-                header('Location: index.php?page=activites&msg=created');
+            $data = ['libelle' => trim($_POST['libelle'] ?? '')];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->create($data)) {
+                header('Location: index.php?page=activites');
                 exit;
-            }
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/activites/create.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/activites/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function edit(int $id): void
-    {
+    public function edit(int $id): void {
         $activite = $this->model->getById($id);
-        if (!$activite) {
-            http_response_code(404);
-            exit('النشاط غير موجود');
-        }
-
-        $errors = [];
-
+        if (!$activite) { header('Location: index.php?page=activites'); exit; }
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = ['LibAct' => trim($_POST['LibAct'] ?? '')];
-
-            if ($data['LibAct'] === '') {
-                $errors[] = 'اسم النشاط مطلوب';
-            } else {
-                $this->model->update($id, $data);
-                header('Location: index.php?page=activites&msg=updated');
+            $data = ['libelle' => trim($_POST['libelle'] ?? '')];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->update($id, $data)) {
+                header('Location: index.php?page=activites');
                 exit;
-            }
-            $activite['LibAct'] = $data['LibAct'];
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/activites/edit.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/activites/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function delete(int $id): void
-    {
-        $this->verifyCsrf();
+    public function delete(int $id): void {
         $this->model->delete($id);
-        header('Location: index.php?page=activites&msg=deleted');
+        header('Location: index.php?page=activites');
         exit;
-    }
-
-    private function verifyCsrf(): void
-    {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
-            http_response_code(403);
-            exit('طلب غير صالح');
-        }
     }
 }

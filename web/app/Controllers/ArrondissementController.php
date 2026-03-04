@@ -1,86 +1,56 @@
 <?php
+require_once __DIR__ . '/../Models/Arrondissement.php';
 
-namespace App\Controllers;
-
-use App\Models\Arrondissement;
-
-class ArrondissementController
-{
+class ArrondissementController {
     private Arrondissement $model;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->model = new Arrondissement();
     }
 
-    public function index(): void
-    {
+    public function index(): void {
         $arrondissements = $this->model->getAll();
+        require __DIR__ . '/../Views/layouts/header.php';
         require __DIR__ . '/../Views/arrondissements/index.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function create(): void
-    {
-        $errors = [];
-        $data   = ['LibArr' => ''];
-
+    public function create(): void {
+        $arrondissement = ['id' => null, 'libelle' => ''];
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = ['LibArr' => trim($_POST['LibArr'] ?? '')];
-
-            if ($data['LibArr'] === '') {
-                $errors[] = 'اسم الدائرة مطلوب';
-            } else {
-                $this->model->create($data);
-                header('Location: index.php?page=arrondissements&msg=created');
+            $data = ['libelle' => trim($_POST['libelle'] ?? '')];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->create($data)) {
+                header('Location: index.php?page=arrondissements');
                 exit;
-            }
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/arrondissements/create.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/arrondissements/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function edit(int $id): void
-    {
+    public function edit(int $id): void {
         $arrondissement = $this->model->getById($id);
-        if (!$arrondissement) {
-            http_response_code(404);
-            exit('الدائرة غير موجودة');
-        }
-
-        $errors = [];
-
+        if (!$arrondissement) { header('Location: index.php?page=arrondissements'); exit; }
+        $error = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->verifyCsrf();
-            $data = ['LibArr' => trim($_POST['LibArr'] ?? '')];
-
-            if ($data['LibArr'] === '') {
-                $errors[] = 'اسم الدائرة مطلوب';
-            } else {
-                $this->model->update($id, $data);
-                header('Location: index.php?page=arrondissements&msg=updated');
+            $data = ['libelle' => trim($_POST['libelle'] ?? '')];
+            if ($data['libelle'] === '') { $error = 'الحقل مطلوب'; }
+            elseif ($this->model->update($id, $data)) {
+                header('Location: index.php?page=arrondissements');
                 exit;
-            }
-            $arrondissement['LibArr'] = $data['LibArr'];
+            } else { $error = 'حدث خطأ أثناء الحفظ'; }
         }
-
-        require __DIR__ . '/../Views/arrondissements/edit.php';
+        require __DIR__ . '/../Views/layouts/header.php';
+        require __DIR__ . '/../Views/arrondissements/_form.php';
+        require __DIR__ . '/../Views/layouts/footer.php';
     }
 
-    public function delete(int $id): void
-    {
-        $this->verifyCsrf();
+    public function delete(int $id): void {
         $this->model->delete($id);
-        header('Location: index.php?page=arrondissements&msg=deleted');
+        header('Location: index.php?page=arrondissements');
         exit;
-    }
-
-    private function verifyCsrf(): void
-    {
-        $token = $_POST['csrf_token'] ?? '';
-        if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
-            http_response_code(403);
-            exit('طلب غير صالح');
-        }
     }
 }
