@@ -110,10 +110,10 @@ try {
     } elseif ($page === 'rapports') {
         $ctrl = new RapportController();
         match ($action) {
-            'contrat' => $ctrl->imprimerContrat($id ?? 0),
-            'liste'   => $ctrl->listeContrats($_GET),
-            'stats'   => $ctrl->statistiques($_GET['annee'] ?? ''),
-            default   => $ctrl->listeContrats([]),
+            'contrat', 'imprimer_contrat' => $ctrl->imprimerContrat($id ?? 0),
+            'liste'                       => $ctrl->listeContrats($_GET),
+            'stats', 'statistiques'       => $ctrl->statistiques($_GET['annee'] ?? ''),
+            default                       => $ctrl->listeContrats([]),
         };
     } else {
         http_response_code(404);

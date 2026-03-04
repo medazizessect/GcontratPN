@@ -3,8 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\Contrat;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class RapportController
 {
@@ -13,6 +11,20 @@ class RapportController
     public function __construct()
     {
         $this->model = new Contrat();
+    }
+
+    private function loadTCPDF(): void
+    {
+        $tcpdfPath = __DIR__ . '/../../lib/tcpdf/tcpdf.php';
+        if (!file_exists($tcpdfPath)) {
+            die('<div style="color:red; padding:20px; font-family:Arial;">
+                <h2>TCPDF non installé</h2>
+                <p>Veuillez installer TCPDF dans <code>web/lib/tcpdf/</code></p>
+                <p>Instructions dans <code>web/lib/README.md</code></p>
+                <p>Ou lancer <code>web/lib/download_tcpdf.bat</code> (Windows) ou <code>web/lib/download_tcpdf.sh</code> (Linux/Mac)</p>
+            </div>');
+        }
+        require_once $tcpdfPath;
     }
 
     /**
@@ -26,8 +38,24 @@ class RapportController
             exit('الملف غير موجود');
         }
 
+        $this->loadTCPDF();
+
+        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->SetCreator('GcontratPN');
+        $pdf->SetAuthor('Système de Gestion des Contrats');
+        $pdf->SetTitle('Contrat N° ' . $contrat['Numero']);
+        $pdf->SetSubject('Contrat');
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(15, 15, 15);
+        $pdf->SetAutoPageBreak(true, 15);
+        $pdf->setRTL(true);
+        $pdf->AddPage();
+
         $html = $this->buildContratHtml($contrat);
-        $this->renderPdf($html, 'contrat_' . $contrat['Numero'] . '.pdf');
+        $pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->Output('contrat_' . $contrat['Numero'] . '.pdf', 'I');
+        exit;
     }
 
     /**
@@ -37,8 +65,23 @@ class RapportController
     {
         $result   = $this->model->search($filtres, 1000, 0);
         $contrats = $result['data'];
-        $html     = $this->buildListeHtml($contrats);
-        $this->renderPdf($html, 'liste_contrats.pdf');
+
+        $this->loadTCPDF();
+
+        $pdf = new \TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->SetCreator('GcontratPN');
+        $pdf->SetTitle('Liste des Contrats');
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->SetAutoPageBreak(true, 10);
+        $pdf->setRTL(true);
+        $pdf->AddPage();
+
+        $html = $this->buildListeHtml($contrats);
+        $pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->Output('liste_contrats.pdf', 'I');
+        exit;
     }
 
     /**
@@ -52,8 +95,23 @@ class RapportController
         }
         $result   = $this->model->search($filtres, 1000, 0);
         $contrats = $result['data'];
-        $html     = $this->buildStatHtml($contrats, $annee);
-        $this->renderPdf($html, 'statistiques_contrats.pdf');
+
+        $this->loadTCPDF();
+
+        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->SetCreator('GcontratPN');
+        $pdf->SetTitle('Statistiques des Contrats');
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(15, 15, 15);
+        $pdf->SetAutoPageBreak(true, 15);
+        $pdf->setRTL(true);
+        $pdf->AddPage();
+
+        $html = $this->buildStatHtml($contrats, $annee);
+        $pdf->writeHTML($html, true, false, true, false, '');
+        $pdf->Output('statistiques_contrats.pdf', 'I');
+        exit;
     }
 
     private function buildContratHtml(array $c): string
@@ -62,60 +120,45 @@ class RapportController
         $fmt = fn(?string $d) => $d ? date('d/m/Y', strtotime($d)) : '';
 
         return <<<HTML
-<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-<meta charset="UTF-8">
 <style>
-  body { font-family: DejaVu Sans, Arial, sans-serif; direction: rtl; font-size: 12px; color:#222; }
-  .header { text-align:center; border-bottom:2px solid #2c3e50; padding-bottom:10px; margin-bottom:20px; }
-  .header h1 { font-size:18px; color:#2c3e50; margin:0; }
-  .header h2 { font-size:14px; color:#555; margin:5px 0 0; }
-  table { width:100%; border-collapse:collapse; margin-bottom:15px; }
-  th { background:#2c3e50; color:#fff; padding:6px 8px; text-align:right; }
-  td { padding:6px 8px; border-bottom:1px solid #ddd; }
-  .label { font-weight:bold; width:35%; color:#2c3e50; }
-  .section-title { background:#eaf0fb; color:#2c3e50; font-weight:bold; padding:6px 8px;
-                   border-right:4px solid #2c3e50; margin-top:15px; }
-  .footer { text-align:center; margin-top:30px; font-size:10px; color:#888; border-top:1px solid #ddd; padding-top:8px; }
+body { font-family: dejavusans; font-size: 10pt; direction: rtl; text-align: right; }
+h1 { font-size: 14pt; text-align: center; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; }
+h3 { font-size: 11pt; color: #2980b9; border-bottom: 1px solid #2980b9; padding-bottom: 3px; margin-top: 15px; }
+table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+td { padding: 5px 8px; border: 1px solid #ddd; font-size: 9pt; }
+td.label { background-color: #ecf0f1; font-weight: bold; width: 35%; color: #2c3e50; }
+.footer { text-align: center; margin-top: 20px; font-size: 9pt; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
 </style>
-</head>
-<body>
-<div class="header">
-  <h1>GcontratPN - نظام إدارة العقود</h1>
-  <h2>بطاقة العقد رقم: {$e($c['Numero'])}</h2>
-</div>
 
-<div class="section-title">البيانات الشخصية</div>
+<h1>GcontratPN - نظام إدارة العقود</h1>
+<p style="text-align:center; color:#555; font-size:11pt;">بطاقة العقد رقم: {$e($c['Numero'])}</p>
+
+<h3>البيانات الشخصية</h3>
 <table>
-  <tr><td class="label">رقم العقد</td><td>{$e($c['Numero'])}</td><td class="label">الاسم</td><td>{$e($c['nom'])}</td></tr>
-  <tr><td class="label">رقم البطاقة الوطنية</td><td>{$e($c['CIN'])}</td><td class="label">الهاتف</td><td>{$e($c['Telephone'])}</td></tr>
-  <tr><td class="label">الرقم الجبائي</td><td>{$e($c['MatriculeFis'])}</td><td class="label">الاسم التجاري</td><td>{$e($c['NomCom'])}</td></tr>
-  <tr><td class="label">النشاط</td><td>{$e($c['LibAct'])}</td><td class="label">العنوان</td><td>{$e($c['LibAdr'])}</td></tr>
+<tr><td class="label">رقم العقد</td><td>{$e($c['Numero'])}</td><td class="label">الاسم</td><td>{$e($c['nom'])}</td></tr>
+<tr><td class="label">رقم البطاقة الوطنية</td><td>{$e($c['CIN'])}</td><td class="label">الهاتف</td><td>{$e($c['Telephone'])}</td></tr>
+<tr><td class="label">الرقم الجبائي</td><td>{$e($c['MatriculeFis'])}</td><td class="label">الاسم التجاري</td><td>{$e($c['NomCom'])}</td></tr>
+<tr><td class="label">النشاط</td><td>{$e($c['LibAct'])}</td><td class="label">العنوان</td><td>{$e($c['LibAdr'])}</td></tr>
 </table>
 
-<div class="section-title">بيانات العقد</div>
+<h3>بيانات العقد</h3>
 <table>
-  <tr><td class="label">تاريخ البداية</td><td>{$fmt($c['DateD'])}</td><td class="label">تاريخ التوقيع</td><td>{$fmt($c['DateSignature'])}</td></tr>
-  <tr><td class="label">موقّع</td><td>{$e($c['Signature'] ? 'نعم' : 'لا')}</td><td class="label">تاريخ الإرجاع</td><td>{$fmt($c['DateRetour'])}</td></tr>
-  <tr><td class="label">مُرجَع</td><td>{$e($c['Retour'] ? 'نعم' : 'لا')}</td><td class="label">رئيس المجلس</td><td>{$e($c['NomPresident'])}</td></tr>
+<tr><td class="label">تاريخ البداية</td><td>{$fmt($c['DateD'])}</td><td class="label">تاريخ التوقيع</td><td>{$fmt($c['DateSignature'])}</td></tr>
+<tr><td class="label">موقّع</td><td>{$e($c['Signature'] ? 'نعم' : 'لا')}</td><td class="label">تاريخ الإرجاع</td><td>{$fmt($c['DateRetour'])}</td></tr>
+<tr><td class="label">مُرجَع</td><td>{$e($c['Retour'] ? 'نعم' : 'لا')}</td><td class="label">رئيس المجلس</td><td>{$e($c['NomPresident'])}</td></tr>
 </table>
 
-<div class="section-title">التسجيل والتنفيذ</div>
+<h3>التسجيل والتنفيذ</h3>
 <table>
-  <tr><td class="label">تاريخ التسجيل</td><td>{$fmt($c['DateEnr'])}</td><td class="label">رقم التسجيل</td><td>{$e($c['NumeroEnr'])}</td></tr>
-  <tr><td class="label">مبلغ التسجيل</td><td>{$e($c['MontantEnr'])}</td><td class="label">صالح التسجيل</td><td>{$e($c['ValidEnr'] ? 'نعم' : 'لا')}</td></tr>
-  <tr><td class="label">سنة التنفيذ</td><td>{$e($c['AnneeExc'])}</td><td class="label">مبلغ التنفيذ</td><td>{$e($c['MontantExc'])}</td></tr>
-  <tr><td class="label">الكمية</td><td>{$e($c['Quantite'])}</td><td class="label">المبلغ السنوي</td><td>{$e($c['MontantAnn'])}</td></tr>
-  <tr><td class="label">عدد الأيام</td><td>{$e($c['NbrJour'])}</td><td class="label">المبلغ الحرفي</td><td>{$e($c['MontantLit'])}</td></tr>
-  <tr><td class="label">رقم الأمر</td><td>{$e($c['NumOrd'])}</td><td class="label">ملاحظات</td><td>{$e($c['observation'])}</td></tr>
+<tr><td class="label">تاريخ التسجيل</td><td>{$fmt($c['DateEnr'])}</td><td class="label">رقم التسجيل</td><td>{$e($c['NumeroEnr'])}</td></tr>
+<tr><td class="label">مبلغ التسجيل</td><td>{$e($c['MontantEnr'])}</td><td class="label">صالح التسجيل</td><td>{$e($c['ValidEnr'] ? 'نعم' : 'لا')}</td></tr>
+<tr><td class="label">سنة التنفيذ</td><td>{$e($c['AnneeExc'])}</td><td class="label">مبلغ التنفيذ</td><td>{$e($c['MontantExc'])}</td></tr>
+<tr><td class="label">الكمية</td><td>{$e($c['Quantite'])}</td><td class="label">المبلغ السنوي</td><td>{$e($c['MontantAnn'])}</td></tr>
+<tr><td class="label">عدد الأيام</td><td>{$e($c['NbrJour'])}</td><td class="label">المبلغ الحرفي</td><td>{$e($c['MontantLit'])}</td></tr>
+<tr><td class="label">رقم الأمر</td><td>{$e($c['NumOrd'])}</td><td class="label">ملاحظات</td><td>{$e($c['observation'])}</td></tr>
 </table>
 
-<div class="footer">
-  تم الطباعة في: {$e(date('d/m/Y H:i'))} — GcontratPN
-</div>
-</body>
-</html>
+<div class="footer">تم الطباعة في: {$e(date('d/m/Y H:i'))} — GcontratPN</div>
 HTML;
     }
 
@@ -141,35 +184,24 @@ HTML;
         }
 
         return <<<HTML
-<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-<meta charset="UTF-8">
 <style>
-  body { font-family: DejaVu Sans, Arial, sans-serif; direction:rtl; font-size:10px; }
-  .header { text-align:center; margin-bottom:15px; border-bottom:2px solid #2c3e50; padding-bottom:8px; }
-  h1 { font-size:15px; color:#2c3e50; }
-  table { width:100%; border-collapse:collapse; }
-  th { background:#2c3e50; color:#fff; padding:5px; font-size:10px; }
-  td { padding:4px 5px; border-bottom:1px solid #ccc; }
-  tr:nth-child(even) { background:#f5f7fa; }
-  .footer { text-align:center; margin-top:20px; font-size:9px; color:#888; }
+body { font-family: dejavusans; font-size: 9pt; direction: rtl; text-align: right; }
+h1 { font-size: 13pt; text-align: center; color: #2c3e50; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { background-color: #2c3e50; color: white; padding: 5px; font-size: 9pt; }
+td { padding: 4px 5px; border: 1px solid #ddd; font-size: 8pt; }
+tr:nth-child(even) { background-color: #f5f5f5; }
+.footer { text-align: center; margin-top: 15px; font-size: 8pt; color: #888; }
 </style>
-</head>
-<body>
-<div class="header">
-  <h1>GcontratPN — قائمة العقود</h1>
-  <p>عدد العقود: {$e(count($contrats))} — تاريخ الطباعة: {$e(date('d/m/Y'))}</p>
-</div>
+<h1>GcontratPN — قائمة العقود</h1>
+<p style="text-align:center; color:#666; font-size:8pt;">عدد العقود: {$e(count($contrats))} — تاريخ الطباعة: {$e(date('d/m/Y'))}</p>
 <table>
-  <thead>
-    <tr><th>رقم العقد</th><th>الاسم</th><th>ب.و.ت</th><th>تاريخ البداية</th><th>موقّع</th><th>مُرجَع</th><th>النشاط</th><th>العنوان</th></tr>
-  </thead>
-  <tbody>$rows</tbody>
+<thead>
+<tr><th>رقم العقد</th><th>الاسم</th><th>ب.و.ت</th><th>تاريخ البداية</th><th>موقّع</th><th>مُرجَع</th><th>النشاط</th><th>العنوان</th></tr>
+</thead>
+<tbody>{$rows}</tbody>
 </table>
 <div class="footer">GcontratPN — نظام إدارة العقود</div>
-</body>
-</html>
 HTML;
     }
 
@@ -183,52 +215,27 @@ HTML;
         $montantTotal = array_sum(array_column($contrats, 'MontantEnr'));
 
         return <<<HTML
-<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-<meta charset="UTF-8">
 <style>
-  body { font-family: DejaVu Sans, Arial, sans-serif; direction:rtl; font-size:12px; }
-  .header { text-align:center; margin-bottom:20px; border-bottom:2px solid #2c3e50; }
-  h1 { font-size:16px; color:#2c3e50; }
-  .stat-box { display:inline-block; border:1px solid #2c3e50; padding:10px 20px;
-              margin:5px; border-radius:4px; text-align:center; min-width:120px; }
-  .stat-num { font-size:24px; color:#27ae60; font-weight:bold; }
-  .stat-label { font-size:11px; color:#555; }
-  table { width:100%; border-collapse:collapse; margin-top:20px; }
-  th { background:#2c3e50; color:#fff; padding:6px; }
-  td { padding:5px; border-bottom:1px solid #ddd; text-align:center; }
+body { font-family: dejavusans; font-size: 10pt; direction: rtl; text-align: right; }
+h1 { font-size: 14pt; text-align: center; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; }
+h3 { font-size: 11pt; color: #2980b9; margin-top: 20px; }
+table { width: 60%; margin: 10px auto; border-collapse: collapse; }
+td { padding: 8px 12px; border: 1px solid #ddd; font-size: 10pt; }
+td.label { background-color: #ecf0f1; font-weight: bold; }
+td.value { text-align: center; color: #2c3e50; font-size: 13pt; font-weight: bold; }
 </style>
-</head>
-<body>
-<div class="header">
-  <h1>GcontratPN — إحصائيات العقود {$e($annee)}</h1>
-  <p>تاريخ الطباعة: {$e(date('d/m/Y'))}</p>
-</div>
+<h1>GcontratPN — إحصائيات العقود {$e($annee)}</h1>
+<p style="text-align:center; color:#666; font-size:9pt;">تاريخ الطباعة: {$e(date('d/m/Y'))}</p>
 
-<div style="text-align:center; margin:20px 0;">
-  <div class="stat-box"><div class="stat-num">{$e($total)}</div><div class="stat-label">إجمالي العقود</div></div>
-  <div class="stat-box"><div class="stat-num">{$e($signes)}</div><div class="stat-label">العقود الموقّعة</div></div>
-  <div class="stat-box"><div class="stat-num">{$e($nonSignes)}</div><div class="stat-label">غير موقّعة</div></div>
-  <div class="stat-box"><div class="stat-num">{$e($retours)}</div><div class="stat-label">المُرجَعة</div></div>
-  <div class="stat-box"><div class="stat-num">{$e(number_format($montantTotal, 3))}</div><div class="stat-label">إجمالي المبالغ</div></div>
-</div>
-</body>
-</html>
+<h3>الإحصائيات العامة</h3>
+<table>
+<tr><td class="label">إجمالي العقود</td><td class="value">{$e($total)}</td></tr>
+<tr><td class="label">العقود الموقّعة</td><td class="value">{$e($signes)}</td></tr>
+<tr><td class="label">غير موقّعة</td><td class="value">{$e($nonSignes)}</td></tr>
+<tr><td class="label">المُرجَعة</td><td class="value">{$e($retours)}</td></tr>
+<tr><td class="label">إجمالي المبالغ</td><td class="value">{$e(number_format($montantTotal, 3))}</td></tr>
+</table>
 HTML;
     }
-
-    private function renderPdf(string $html, string $filename): void
-    {
-        $options = new Options();
-        $options->set('isRemoteEnabled', false);
-        $options->set('defaultFont', 'DejaVu Sans');
-
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        $dompdf->stream($filename, ['Attachment' => false]);
-        exit;
-    }
 }
+

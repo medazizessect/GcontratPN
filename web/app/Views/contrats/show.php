@@ -12,8 +12,8 @@ require __DIR__ . '/../layouts/header.php';
         <a href="index.php?page=contrats&action=edit&id=<?= (int)$contrat['id'] ?>" class="btn btn-warning btn-sm">
             <i class="fas fa-edit me-1"></i>تعديل
         </a>
-        <a href="index.php?page=contrats&action=imprimer&id=<?= (int)$contrat['id'] ?>" class="btn btn-secondary btn-sm" target="_blank">
-            <i class="fas fa-print me-1"></i>طباعة PDF
+        <a href="index.php?page=rapports&action=imprimer_contrat&id=<?= (int)$contrat['id'] ?>" class="btn btn-danger btn-sm" target="_blank">
+            <i class="fas fa-file-pdf me-1"></i>طباعة PDF
         </a>
         <a href="index.php?page=contrats" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-arrow-right me-1"></i>العودة
