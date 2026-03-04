@@ -1,11 +1,5 @@
 <?php
 
-namespace App\Controllers;
-
-use App\Models\Contrat;
-use App\Models\Activite;
-use App\Models\Adresse;
-
 class ContratController
 {
     private Contrat $model;

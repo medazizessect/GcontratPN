@@ -1,10 +1,5 @@
 <?php
 
-namespace App\Models;
-
-use PDO;
-use PDOException;
-
 /**
  * Singleton PDO pour la connexion MySQL
  */
@@ -15,18 +10,19 @@ class Database
 
     private function __construct()
     {
-        $config = require dirname(__DIR__, 2) . '/config/database.php';
-
         $dsn = sprintf(
-            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-            $config['host'],
-            $config['port'],
-            $config['dbname'],
-            $config['charset']
+            'mysql:host=%s;dbname=%s;charset=%s',
+            DB_HOST,
+            DB_NAME,
+            DB_CHARSET
         );
 
         try {
-            $this->pdo = new PDO($dsn, $config['username'], $config['password'], $config['options']);
+            $this->pdo = new PDO($dsn, DB_USER, DB_PASS, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+            ]);
         } catch (PDOException $e) {
             throw new PDOException('Erreur de connexion à la base de données: ' . $e->getMessage());
         }

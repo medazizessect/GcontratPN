@@ -1,9 +1,5 @@
 <?php
 
-namespace App\Controllers;
-
-use App\Models\Activite;
-
 class ActiviteController
 {
     private Activite $model;

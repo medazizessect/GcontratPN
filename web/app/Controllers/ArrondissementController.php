@@ -1,9 +1,5 @@
 <?php
 
-namespace App\Controllers;
-
-use App\Models\Arrondissement;
-
 class ArrondissementController
 {
     private Arrondissement $model;
