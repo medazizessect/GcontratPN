@@ -1,0 +1,5 @@
+# Ignorer les fichiers TCPDF (trop volumineux pour git)
+*
+!.gitignore
+!.gitkeep
+!README.md
