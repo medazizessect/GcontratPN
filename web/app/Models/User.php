@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use PDO;
+use App\Models\Database;
 
 class User
 {
@@ -30,5 +31,18 @@ class User
         $hash = password_hash($newPassword, PASSWORD_BCRYPT);
         $stmt = $this->db->prepare('UPDATE users SET password_hash = :hash WHERE id = :id');
         return $stmt->execute([':hash' => $hash, ':id' => $id]);
+    }
+
+    /**
+     * Find user by username and verify password in one step.
+     * Returns the user row on success, false on failure.
+     */
+    public function authenticate(string $username, string $password): array|false
+    {
+        $user = $this->findByUsername($username);
+        if ($user && password_verify($password, $user['password_hash'])) {
+            return $user;
+        }
+        return false;
     }
 }

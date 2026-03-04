@@ -15,6 +15,11 @@ class AuthController
 
     public function login(): void
     {
+        if (!empty($_SESSION['user_id'])) {
+            header('Location: index.php?page=dashboard');
+            exit;
+        }
+
         $error = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,8 +31,8 @@ class AuthController
             if ($username === '' || $password === '') {
                 $error = 'يرجى إدخال اسم المستخدم وكلمة المرور';
             } else {
-                $user = $this->userModel->findByUsername($username);
-                if ($user && $this->userModel->verifyPassword($password, $user['password_hash'])) {
+                $user = $this->userModel->authenticate($username, $password);
+                if ($user) {
                     session_regenerate_id(true);
                     $_SESSION['user_id']   = $user['id'];
                     $_SESSION['username']  = $user['username'];
@@ -64,6 +69,11 @@ class AuthController
 
     public function changePassword(): void
     {
+        if (empty($_SESSION['user_id'])) {
+            header('Location: index.php?page=login');
+            exit;
+        }
+
         $error   = '';
         $success = '';
 
@@ -74,12 +84,16 @@ class AuthController
             $newPassword     = $_POST['new_password'] ?? '';
             $confirmPassword = $_POST['confirm_password'] ?? '';
 
-            $user = $this->userModel->findByUsername($_SESSION['username']);
+            $user = $this->userModel->findByUsername($_SESSION['username'] ?? '');
+            if (!$user) {
+                header('Location: index.php?page=login');
+                exit;
+            }
 
             if (!$this->userModel->verifyPassword($currentPassword, $user['password_hash'])) {
                 $error = 'كلمة المرور الحالية غير صحيحة';
-            } elseif (strlen($newPassword) < 6) {
-                $error = 'يجب أن تكون كلمة المرور الجديدة 6 أحرف على الأقل';
+            } elseif (strlen($newPassword) < 8) {
+                $error = 'يجب أن تكون كلمة المرور الجديدة 8 أحرف على الأقل';
             } elseif ($newPassword !== $confirmPassword) {
                 $error = 'كلمة المرور الجديدة غير متطابقة';
             } else {
