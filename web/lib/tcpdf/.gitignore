@@ -1,0 +1,4 @@
+# Ignorer les fichiers TCPDF (trop volumineux)
+*
+!.gitignore
+!.gitkeep

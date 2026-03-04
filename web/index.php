@@ -1,126 +1,106 @@
 <?php
-/**
- * GcontratPN — Point d'entrée et routeur principal
- * PHP 8.1+ MVC Application
- */
-
 declare(strict_types=1);
 
-// Autoloader Composer
-require_once __DIR__ . '/vendor/autoload.php';
-
-// Démarrage de session sécurisée
-session_start([
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Lax',
-    'use_strict_mode' => true,
-]);
-
-// Génération du token CSRF s'il n'existe pas
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+// Démarrage de session sécurisé
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_httponly' => true,
+        'cookie_samesite' => 'Lax',
+        'use_strict_mode' => true,
+    ]);
 }
 
-// Pages accessibles sans authentification
-$publicPages = ['login'];
+// Chargement manuel des classes (sans Composer)
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/app/Models/Database.php';
+require_once __DIR__ . '/app/Models/User.php';
+require_once __DIR__ . '/app/Models/Contrat.php';
+require_once __DIR__ . '/app/Models/Activite.php';
+require_once __DIR__ . '/app/Models/Adresse.php';
+require_once __DIR__ . '/app/Models/Arrondissement.php';
+require_once __DIR__ . '/app/Models/Categorie.php';
+require_once __DIR__ . '/app/Controllers/AuthController.php';
+require_once __DIR__ . '/app/Controllers/ContratController.php';
+require_once __DIR__ . '/app/Controllers/ActiviteController.php';
+require_once __DIR__ . '/app/Controllers/AdresseController.php';
+require_once __DIR__ . '/app/Controllers/ArrondissementController.php';
+require_once __DIR__ . '/app/Controllers/CategorieController.php';
+require_once __DIR__ . '/app/Controllers/RapportController.php';
 
+// Routeur simple
 $page   = $_GET['page']   ?? 'dashboard';
 $action = $_GET['action'] ?? 'index';
-$id     = isset($_GET['id']) ? (int) $_GET['id'] : null;
+$id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
-// Protection des routes
-if (!in_array($page, $publicPages, true) && empty($_SESSION['user_id'])) {
-    header('Location: index.php?page=login');
+// Vérification authentification (sauf login)
+if ($page !== 'auth' && empty($_SESSION['user_id'])) {
+    header('Location: ?page=auth&action=login');
     exit;
 }
 
-// Redirections si déjà connecté
-if ($page === 'login' && !empty($_SESSION['user_id'])) {
-    header('Location: index.php?page=dashboard');
-    exit;
-}
-
-use App\Controllers\AuthController;
-use App\Controllers\ContratController;
-use App\Controllers\ActiviteController;
-use App\Controllers\AdresseController;
-use App\Controllers\ArrondissementController;
-use App\Controllers\CategorieController;
-use App\Controllers\RapportController;
-use App\Models\Contrat;
-
-// Routage
+// Dispatch
 try {
-    if ($page === 'login') {
-        (new AuthController())->login();
-    } elseif ($page === 'auth') {
+switch ($page) {
+    case 'auth':
         $ctrl = new AuthController();
-        match ($action) {
-            'logout'          => $ctrl->logout(),
-            'change_password' => $ctrl->changePassword(),
-            default           => $ctrl->login(),
-        };
-    } elseif ($page === 'dashboard') {
-        $contratModel = new Contrat();
-        require __DIR__ . '/app/Views/layouts/header.php';
-        require __DIR__ . '/app/Views/dashboard/index.php';
-        require __DIR__ . '/app/Views/layouts/footer.php';
-    } elseif ($page === 'contrats') {
+        if ($action === 'login')  { $ctrl->login();  break; }
+        if ($action === 'logout') { $ctrl->logout(); break; }
+        if ($action === 'change_password') { $ctrl->changePassword(); break; }
+        break;
+
+    case 'contrats':
         $ctrl = new ContratController();
-        match ($action) {
-            'create'   => $ctrl->create(),
-            'edit'     => $ctrl->edit($id ?? 0),
-            'show'     => $ctrl->show($id ?? 0),
-            'delete'   => $ctrl->delete($id ?? 0),
-            'imprimer' => $ctrl->imprimer($id ?? 0),
-            default    => $ctrl->index(),
-        };
-    } elseif ($page === 'activites') {
+        if ($action === 'index')  { $ctrl->index();         break; }
+        if ($action === 'create') { $ctrl->create();        break; }
+        if ($action === 'edit')   { $ctrl->edit($id);       break; }
+        if ($action === 'show')   { $ctrl->show($id);       break; }
+        if ($action === 'delete') { $ctrl->delete($id);     break; }
+        break;
+
+    case 'activites':
         $ctrl = new ActiviteController();
-        match ($action) {
-            'create' => $ctrl->create(),
-            'edit'   => $ctrl->edit($id ?? 0),
-            'delete' => $ctrl->delete($id ?? 0),
-            default  => $ctrl->index(),
-        };
-    } elseif ($page === 'adresses') {
+        if ($action === 'index')  { $ctrl->index();         break; }
+        if ($action === 'create') { $ctrl->create();        break; }
+        if ($action === 'edit')   { $ctrl->edit($id);       break; }
+        if ($action === 'delete') { $ctrl->delete($id);     break; }
+        break;
+
+    case 'adresses':
         $ctrl = new AdresseController();
-        match ($action) {
-            'create' => $ctrl->create(),
-            'edit'   => $ctrl->edit($id ?? 0),
-            'delete' => $ctrl->delete($id ?? 0),
-            default  => $ctrl->index(),
-        };
-    } elseif ($page === 'arrondissements') {
+        if ($action === 'index')  { $ctrl->index();         break; }
+        if ($action === 'create') { $ctrl->create();        break; }
+        if ($action === 'edit')   { $ctrl->edit($id);       break; }
+        if ($action === 'delete') { $ctrl->delete($id);     break; }
+        break;
+
+    case 'arrondissements':
         $ctrl = new ArrondissementController();
-        match ($action) {
-            'create' => $ctrl->create(),
-            'edit'   => $ctrl->edit($id ?? 0),
-            'delete' => $ctrl->delete($id ?? 0),
-            default  => $ctrl->index(),
-        };
-    } elseif ($page === 'categories') {
+        if ($action === 'index')  { $ctrl->index();         break; }
+        if ($action === 'create') { $ctrl->create();        break; }
+        if ($action === 'edit')   { $ctrl->edit($id);       break; }
+        if ($action === 'delete') { $ctrl->delete($id);     break; }
+        break;
+
+    case 'categories':
         $ctrl = new CategorieController();
-        match ($action) {
-            'create' => $ctrl->create(),
-            'edit'   => $ctrl->edit($id ?? 0),
-            'delete' => $ctrl->delete($id ?? 0),
-            default  => $ctrl->index(),
-        };
-    } elseif ($page === 'rapports') {
+        if ($action === 'index')  { $ctrl->index();         break; }
+        if ($action === 'create') { $ctrl->create();        break; }
+        if ($action === 'edit')   { $ctrl->edit($id);       break; }
+        if ($action === 'delete') { $ctrl->delete($id);     break; }
+        break;
+
+    case 'rapports':
         $ctrl = new RapportController();
-        match ($action) {
-            'contrat' => $ctrl->imprimerContrat($id ?? 0),
-            'liste'   => $ctrl->listeContrats($_GET),
-            'stats'   => $ctrl->statistiques($_GET['annee'] ?? ''),
-            default   => $ctrl->listeContrats([]),
-        };
-    } else {
-        http_response_code(404);
-        require __DIR__ . '/app/Views/layouts/header.php';
-        echo '<div class="alert alert-warning text-center mt-5"><h4>404 — الصفحة غير موجودة</h4></div>';
-        require __DIR__ . '/app/Views/layouts/footer.php';
-    }
+        if ($action === 'imprimer_contrat') { $ctrl->imprimerContrat($id); break; }
+        if ($action === 'liste')            { $ctrl->listeContrats();      break; }
+        if ($action === 'statistiques')     { $ctrl->statistiques();       break; }
+        break;
+
+    case 'dashboard':
+    default:
+        require_once __DIR__ . '/app/Views/dashboard/index.php';
+        break;
+}
 } catch (\Throwable $e) {
     http_response_code(500);
     if (!empty($_SESSION['role']) && $_SESSION['role'] === 'admin') {
