@@ -76,6 +76,18 @@ $checked = fn(string $k) => !empty($c[$k]) ? 'checked' : '';
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">الفئة</label>
+                <select name="CodeCat" class="form-select">
+                    <option value="">-- اختر الفئة --</option>
+                    <?php foreach ($categories ?? [] as $cat): ?>
+                    <option value="<?= htmlspecialchars($cat['CodeCat'], ENT_QUOTES, 'UTF-8') ?>"
+                        <?= (($c['CodeCat'] ?? '') === $cat['CodeCat']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($cat['CodeCat'] . ' — ' . $cat['LibCat'], ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         </div>
     </div>
 </div>
