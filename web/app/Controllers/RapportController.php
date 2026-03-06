@@ -42,6 +42,17 @@ class RapportController
     }
 
     /**
+     * Affiche la page HTML des statistiques
+     */
+    public function statistiquesView(string $annee = ''): void
+    {
+        $statsArrond    = $this->model->statsByArrondissement($annee);
+        $availableYears = $this->model->getAvailableYears();
+        $loadCharts     = true;
+        require __DIR__ . '/../Views/rapports/statistiques.php';
+    }
+
+    /**
      * Génère les statistiques en PDF (remplace Stat-Contrat.rpt)
      */
     public function statistiques(string $annee = ''): void
