@@ -41,13 +41,13 @@ if ($page === 'login' && !empty($_SESSION['user_id'])) {
 }
 
 use App\Controllers\AuthController;
+use App\Controllers\DashboardController;
 use App\Controllers\ContratController;
 use App\Controllers\ActiviteController;
 use App\Controllers\AdresseController;
 use App\Controllers\ArrondissementController;
 use App\Controllers\CategorieController;
 use App\Controllers\RapportController;
-use App\Models\Contrat;
 
 // Routage
 try {
@@ -61,10 +61,7 @@ try {
             default           => $ctrl->login(),
         };
     } elseif ($page === 'dashboard') {
-        $contratModel = new Contrat();
-        require __DIR__ . '/app/Views/layouts/header.php';
-        require __DIR__ . '/app/Views/dashboard/index.php';
-        require __DIR__ . '/app/Views/layouts/footer.php';
+        (new DashboardController())->index();
     } elseif ($page === 'contrats') {
         $ctrl = new ContratController();
         match ($action) {
@@ -72,6 +69,7 @@ try {
             'edit'     => $ctrl->edit($id ?? 0),
             'show'     => $ctrl->show($id ?? 0),
             'delete'   => $ctrl->delete($id ?? 0),
+            'export'   => $ctrl->export(),
             'imprimer' => $ctrl->imprimer($id ?? 0),
             default    => $ctrl->index(),
         };
@@ -101,10 +99,11 @@ try {
         };
     } elseif ($page === 'categories') {
         $ctrl = new CategorieController();
+        $code = trim($_GET['code'] ?? (string) ($id ?? ''));
         match ($action) {
             'create' => $ctrl->create(),
-            'edit'   => $ctrl->edit($id ?? 0),
-            'delete' => $ctrl->delete($id ?? 0),
+            'edit'   => $ctrl->edit($code),
+            'delete' => $ctrl->delete(),
             default  => $ctrl->index(),
         };
     } elseif ($page === 'rapports') {

@@ -22,15 +22,14 @@ class CategorieController
     public function create(): void
     {
         $errors = [];
-        $data   = ['LibCat' => ''];
+        $data   = $this->emptyData();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->verifyCsrf();
-            $data = ['LibCat' => trim($_POST['LibCat'] ?? '')];
+            $data   = $this->getPostData();
+            $errors = $this->validate($data, true);
 
-            if ($data['LibCat'] === '') {
-                $errors[] = 'اسم الفئة مطلوب';
-            } else {
+            if (empty($errors)) {
                 $this->model->create($data);
                 header('Location: index.php?page=categories&msg=created');
                 exit;
@@ -40,9 +39,9 @@ class CategorieController
         require __DIR__ . '/../Views/categories/create.php';
     }
 
-    public function edit(int $id): void
+    public function edit(string $code = ''): void
     {
-        $categorie = $this->model->getById($id);
+        $categorie = $this->model->findById($code);
         if (!$categorie) {
             http_response_code(404);
             exit('الفئة غير موجودة');
@@ -52,27 +51,65 @@ class CategorieController
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->verifyCsrf();
-            $data = ['LibCat' => trim($_POST['LibCat'] ?? '')];
+            $data   = $this->getPostData();
+            $errors = $this->validate($data, false);
 
-            if ($data['LibCat'] === '') {
-                $errors[] = 'اسم الفئة مطلوب';
-            } else {
-                $this->model->update($id, $data);
+            if (empty($errors)) {
+                $this->model->update($code, $data);
                 header('Location: index.php?page=categories&msg=updated');
                 exit;
             }
-            $categorie['LibCat'] = $data['LibCat'];
+            $categorie = array_merge($categorie, $data);
         }
 
         require __DIR__ . '/../Views/categories/edit.php';
     }
 
-    public function delete(int $id): void
+    public function delete(): void
     {
         $this->verifyCsrf();
-        $this->model->delete($id);
+        $code = trim($_POST['CodeCat'] ?? '');
+        if ($code !== '') {
+            $this->model->delete($code);
+        }
         header('Location: index.php?page=categories&msg=deleted');
         exit;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function getPostData(): array
+    {
+        return [
+            'CodeCat'      => strtoupper(trim($_POST['CodeCat']      ?? '')),
+            'LibCat'       => trim($_POST['LibCat']       ?? ''),
+            'Decre'        => trim($_POST['Decre']        ?? ''),
+            'MontMet'      => $_POST['MontMet']           ?? '',
+            'MontMetClo'   => $_POST['MontMetClo']        ?? '',
+            'MontAff'      => $_POST['MontAff']           ?? '',
+            'NomPresident' => trim($_POST['NomPresident'] ?? ''),
+        ];
+    }
+
+    private function emptyData(): array
+    {
+        return [
+            'CodeCat' => '', 'LibCat' => '', 'Decre' => '',
+            'MontMet' => '', 'MontMetClo' => '', 'MontAff' => '',
+            'NomPresident' => '',
+        ];
+    }
+
+    private function validate(array $data, bool $checkCode): array
+    {
+        $errors = [];
+        if ($checkCode && $data['CodeCat'] === '') {
+            $errors[] = 'رمز الفئة مطلوب';
+        }
+        if ($data['LibCat'] === '') {
+            $errors[] = 'اسم الفئة مطلوب';
+        }
+        return $errors;
     }
 
     private function verifyCsrf(): void

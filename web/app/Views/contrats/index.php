@@ -2,9 +2,23 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0"><i class="fas fa-file-contract me-2 text-primary"></i>قائمة العقود</h4>
-    <a href="index.php?page=contrats&action=create" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i>عقد جديد
-    </a>
+    <div class="d-flex gap-2">
+        <a href="index.php?page=contrats&action=export&<?= http_build_query(array_filter([
+            'Numero'     => $_GET['Numero']     ?? '',
+            'nom'        => $_GET['nom']        ?? '',
+            'CIN'        => $_GET['CIN']        ?? '',
+            'Signature'  => $_GET['Signature']  ?? '',
+            'CodeAct'    => $_GET['CodeAct']    ?? '',
+            'CodeCat'    => $_GET['CodeCat']    ?? '',
+            'DateD_from' => $_GET['DateD_from'] ?? '',
+            'DateD_to'   => $_GET['DateD_to']   ?? '',
+        ])) ?>" class="btn btn-success btn-sm">
+            <i class="fas fa-file-csv me-1"></i>تصدير CSV
+        </a>
+        <a href="index.php?page=contrats&action=create" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>عقد جديد
+        </a>
+    </div>
 </div>
 
 <?php if (!empty($_GET['msg'])): ?>
@@ -33,8 +47,26 @@
                            value="<?= htmlspecialchars($_GET['nom'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                 </div>
                 <div class="col-md-2">
-                    <input type="text" name="CIN" class="form-control" placeholder="رقم البطاقة"
-                           value="<?= htmlspecialchars($_GET['CIN'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    <select name="CodeAct" class="form-select">
+                        <option value="">كل الأنشطة</option>
+                        <?php foreach ($activites ?? [] as $act): ?>
+                        <option value="<?= (int)$act['CodeAct'] ?>"
+                            <?= (($_GET['CodeAct'] ?? '') == $act['CodeAct']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($act['LibAct'], ENT_QUOTES, 'UTF-8') ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="CodeCat" class="form-select">
+                        <option value="">كل الفئات</option>
+                        <?php foreach ($categories ?? [] as $cat): ?>
+                        <option value="<?= htmlspecialchars($cat['CodeCat'], ENT_QUOTES, 'UTF-8') ?>"
+                            <?= (($_GET['CodeCat'] ?? '') === $cat['CodeCat']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($cat['LibCat'], ENT_QUOTES, 'UTF-8') ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <select name="Signature" class="form-select">
@@ -42,6 +74,16 @@
                         <option value="1" <?= ($_GET['Signature'] ?? '') === '1' ? 'selected' : '' ?>>موقّع</option>
                         <option value="0" <?= ($_GET['Signature'] ?? '') === '0' ? 'selected' : '' ?>>غير موقّع</option>
                     </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="DateD_from" class="form-control"
+                           value="<?= htmlspecialchars($_GET['DateD_from'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                           placeholder="من تاريخ">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="DateD_to" class="form-control"
+                           value="<?= htmlspecialchars($_GET['DateD_to'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                           placeholder="إلى تاريخ">
                 </div>
                 <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill"><i class="fas fa-search me-1"></i>بحث</button>
@@ -51,6 +93,9 @@
         </form>
     </div>
 </div>
+
+<!-- Résultats -->
+<div class="text-muted small mb-2">إجمالي النتائج: <?= (int)$total ?></div>
 
 <!-- Tableau -->
 <div class="card border-0 shadow-sm">
@@ -62,9 +107,10 @@
                         <th>رقم العقد</th>
                         <th>الاسم</th>
                         <th>ب.و.ت</th>
-                        <th>الهاتف</th>
-                        <th>تاريخ البداية</th>
                         <th>النشاط</th>
+                        <th>الفئة</th>
+                        <th>تاريخ البداية</th>
+                        <th>مبلغ التسجيل</th>
                         <th class="text-center">موقّع</th>
                         <th class="text-center">مُرجَع</th>
                         <th class="text-center">الإجراءات</th>
@@ -76,9 +122,10 @@
                         <td class="fw-semibold"><?= htmlspecialchars($c['Numero'], ENT_QUOTES, 'UTF-8') ?></td>
                         <td><?= htmlspecialchars($c['nom'], ENT_QUOTES, 'UTF-8') ?></td>
                         <td><?= htmlspecialchars($c['CIN'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
-                        <td><?= htmlspecialchars($c['Telephone'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars($c['LibAct'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars($c['LibCat'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
                         <td><?= $c['DateD'] ? date('d/m/Y', strtotime($c['DateD'])) : '' ?></td>
-                        <td><?= htmlspecialchars($c['LibAct'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= $c['MontantEnr'] !== null ? number_format((float)$c['MontantEnr'], 3) : '—' ?></td>
                         <td class="text-center">
                             <?php if ($c['Signature']): ?>
                                 <span class="badge bg-success"><i class="fas fa-check"></i></span>
@@ -111,7 +158,7 @@
                     </tr>
                 <?php endforeach; ?>
                 <?php if (empty($contrats)): ?>
-                    <tr><td colspan="9" class="text-center text-muted py-4">لا توجد عقود</td></tr>
+                    <tr><td colspan="10" class="text-center text-muted py-4">لا توجد عقود</td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>
@@ -125,7 +172,16 @@
     <ul class="pagination justify-content-center">
         <?php for ($i = 1; $i <= $pages; $i++): ?>
         <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-            <a class="page-link" href="?page=contrats&p=<?= $i ?>&<?= http_build_query(array_filter(['Numero'=>$_GET['Numero']??'','nom'=>$_GET['nom']??'','CIN'=>$_GET['CIN']??'','Signature'=>$_GET['Signature']??''])) ?>">
+            <a class="page-link" href="?page=contrats&p=<?= $i ?>&<?= http_build_query(array_filter([
+                'Numero'     => $_GET['Numero']     ?? '',
+                'nom'        => $_GET['nom']        ?? '',
+                'CIN'        => $_GET['CIN']        ?? '',
+                'Signature'  => $_GET['Signature']  ?? '',
+                'CodeAct'    => $_GET['CodeAct']    ?? '',
+                'CodeCat'    => $_GET['CodeCat']    ?? '',
+                'DateD_from' => $_GET['DateD_from'] ?? '',
+                'DateD_to'   => $_GET['DateD_to']   ?? '',
+            ])) ?>">
                 <?= $i ?>
             </a>
         </li>

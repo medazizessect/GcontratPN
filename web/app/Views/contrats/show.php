@@ -41,8 +41,9 @@ require __DIR__ . '/../layouts/header.php';
                     <tr><td class="text-muted fw-semibold">الهاتف</td><td><?= $e($contrat['Telephone']) ?></td></tr>
                     <tr><td class="text-muted fw-semibold">الرقم الجبائي</td><td><?= $e($contrat['MatriculeFis']) ?></td></tr>
                     <tr><td class="text-muted fw-semibold">الاسم التجاري</td><td><?= $e($contrat['NomCom']) ?></td></tr>
-                    <tr><td class="text-muted fw-semibold">النشاط</td><td><?= $e($contrat['LibAct']) ?></td></tr>
-                    <tr><td class="text-muted fw-semibold">العنوان</td><td><?= $e($contrat['LibAdr']) ?></td></tr>
+                    <tr><td class="text-muted fw-semibold">النشاط</td><td><?= $e($contrat['LibAct'] ?? '') ?></td></tr>
+                    <tr><td class="text-muted fw-semibold">العنوان</td><td><?= $e($contrat['LibAdr'] ?? '') ?></td></tr>
+                    <tr><td class="text-muted fw-semibold">الفئة</td><td><?= $e($contrat['LibCat'] ?? '') ?> <?php if (!empty($contrat['CodeCat'])): ?><span class="badge bg-secondary"><?= $e($contrat['CodeCat']) ?></span><?php endif; ?></td></tr>
                 </table>
             </div>
         </div>

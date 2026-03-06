@@ -43,6 +43,188 @@ Ou depuis MySQL :
 SOURCE /chemin/vers/web/migrations/create_database.sql;
 ```
 
+Ce script crée toutes les tables, les contraintes FK et injecte les données de démo (10 contrats, 8 activités, 7 adresses, 5 arrondissements, 5 catégories).
+
+### 4. Configurer le serveur web
+
+#### Apache (.htaccess à placer dans web/)
+
+```apache
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+```
+
+#### Nginx
+
+```nginx
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+}
+```
+
+#### Développement local (PHP built-in server)
+
+```bash
+cd web/
+php -S localhost:8000
+```
+
+Puis ouvrir http://localhost:8000/index.php
+
+### 5. Connexion par défaut
+
+| Champ | Valeur |
+|-------|--------|
+| Utilisateur | `admin` |
+| Mot de passe | `admin123` |
+
+⚠️ **Changer le mot de passe immédiatement après la première connexion !**
+
+## Structure du projet
+
+```
+web/
+├── index.php                    # Routeur principal
+├── composer.json                # Dépendances (dompdf/dompdf)
+├── config/
+│   └── database.php             # Configuration PDO MySQL
+├── app/
+│   ├── Controllers/             # Logique métier
+│   │   ├── AuthController.php
+│   │   ├── DashboardController.php
+│   │   ├── ContratController.php
+│   │   ├── ActiviteController.php
+│   │   ├── AdresseController.php
+│   │   ├── ArrondissementController.php
+│   │   ├── CategorieController.php
+│   │   └── RapportController.php
+│   ├── Models/                  # Accès données (PDO)
+│   │   ├── Database.php
+│   │   ├── Contrat.php
+│   │   ├── Activite.php
+│   │   ├── Adresse.php
+│   │   ├── Arrondissement.php
+│   │   ├── Categorie.php
+│   │   └── User.php
+│   └── Views/                   # Templates PHP
+│       ├── layouts/
+│       ├── auth/
+│       ├── dashboard/
+│       ├── contrats/
+│       ├── activites/
+│       ├── adresses/
+│       ├── arrondissements/
+│       └── categories/
+├── migrations/
+│   └── create_database.sql      # Script SQL complet avec données de démo
+└── public/
+    ├── css/style.css
+    └── js/app.js
+```
+
+## Fonctionnalités
+
+- ✅ Authentification sécurisée (sessions PHP, bcrypt)
+- ✅ CSRF protection sur tous les formulaires POST
+- ✅ CRUD complet pour les contrats (tous les champs de la table `Fiche` VB6, incluant `CodeCat`)
+- ✅ CRUD pour Activités, Adresses, Arrondissements
+- ✅ CRUD complet pour Catégories avec clé primaire `CodeCat VARCHAR(10)`, décret, montants, président
+- ✅ Recherche et filtrage des contrats (par numéro, nom, activité, **catégorie**, dates, statut)
+- ✅ Pagination
+- ✅ **Export CSV** des contrats filtrés (UTF-8 BOM compatible Excel)
+- ✅ Génération PDF (DomPDF) : contrat individuel, liste, statistiques
+- ✅ **Dashboard interactif** :
+  - 4 cartes KPI (total, signés, montant total, en cours)
+  - Graphique barres : contrats par activité (Chart.js)
+  - Graphique donut : répartition par statut (signé / non signé / enregistré)
+  - Graphique ligne : évolution mensuelle sur 12 mois
+  - Tableau des 5 derniers contrats
+  - Alertes : contrats sans signature depuis plus de 30 jours
+- ✅ Interface RTL arabe (Bootstrap 5 RTL)
+- ✅ Requêtes PDO préparées (protection injection SQL)
+- ✅ Encodage utf8mb4 complet
+
+## Schéma de base de données
+
+| Table | Clé primaire | Description |
+|-------|-------------|-------------|
+| `users` | `id` INT | Utilisateurs de l'application |
+| `arrondissements` | `id` INT | Dائرات (divisions administratives) |
+| `activites` | `CodeAct` INT | Activités économiques |
+| `adresses` | `CodeAdr` INT | Adresses liées aux arrondissements |
+| `categories` | `CodeCat` VARCHAR(10) | Catégories de contrats (avec montants) |
+| `contrats` | `id` INT | Table principale (= `Fiche` SQL Server) |
+
+## Sécurité
+
+- Mots de passe hashés avec `password_hash()` (bcrypt)
+- Requêtes SQL préparées uniquement (PDO)
+- Protection CSRF sur tous les formulaires POST
+- `htmlspecialchars()` sur toutes les sorties
+- Sessions sécurisées (httponly, samesite)
+
+## Correspondance VB6 → PHP
+
+| Formulaire VB6 | Équivalent PHP |
+|---|---|
+| PremEcr.frm | Views/auth/login.php |
+| MotPasse.frm + MotP.frm | AuthController + change_password.php |
+| Menu.frm | Views/dashboard/index.php |
+| FFiche.frm | Views/contrats/create.php + edit.php |
+| GFiche.frm | Views/contrats/index.php |
+| CFiche.frm | Intégré dans contrats/index.php |
+| FActivite.frm + GActivite.frm | Views/activites/ |
+| FAdresse.frm + GAdresse.frm | Views/adresses/ |
+| FArrondissement.frm + GArrondissement.frm | Views/arrondissements/ |
+| FCategorie.frm + GCategorie.frm | Views/categories/ |
+| Contrat.rpt + Contrat-2023.rpt | RapportController::imprimerContrat() |
+| ListeContrat.rpt | RapportController::listeContrats() |
+| Stat-Contrat.rpt | RapportController::statistiques() |
+
+
+## Prérequis
+
+- PHP 8.1 ou supérieur (avec extensions : pdo, pdo_mysql, mbstring)
+- MySQL 5.7+ ou MariaDB 10.4+
+- Composer
+- Serveur web Apache/Nginx (ou PHP built-in server pour développement)
+
+## Installation
+
+### 1. Installer les dépendances PHP
+
+```bash
+cd web/
+composer install
+```
+
+### 2. Configurer la base de données
+
+Copier et éditer la configuration :
+
+```bash
+# Modifier web/config/database.php avec vos paramètres
+# ou utiliser des variables d'environnement :
+export DB_HOST=localhost
+export DB_PORT=3306
+export DB_NAME=gcontrat_pn
+export DB_USER=votre_utilisateur
+export DB_PASS=votre_mot_de_passe
+```
+
+### 3. Créer la base de données MySQL
+
+```bash
+mysql -u root -p < migrations/create_database.sql
+```
+
+Ou depuis MySQL :
+```sql
+SOURCE /chemin/vers/web/migrations/create_database.sql;
+```
+
 ### 4. Configurer le serveur web
 
 #### Apache (.htaccess à placer dans web/)
