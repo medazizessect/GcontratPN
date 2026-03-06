@@ -39,10 +39,8 @@ class CategorieController
         require __DIR__ . '/../Views/categories/create.php';
     }
 
-    public function edit(int $id): void
+    public function edit(string $code = ''): void
     {
-        // CodeCat is a string; $id is ignored here — we use GET param 'code'
-        $code      = trim($_GET['code'] ?? (string) $id);
         $categorie = $this->model->findById($code);
         if (!$categorie) {
             http_response_code(404);
@@ -67,11 +65,13 @@ class CategorieController
         require __DIR__ . '/../Views/categories/edit.php';
     }
 
-    public function delete(int $id): void
+    public function delete(): void
     {
         $this->verifyCsrf();
-        $code = trim($_POST['CodeCat'] ?? (string) $id);
-        $this->model->delete($code);
+        $code = trim($_POST['CodeCat'] ?? '');
+        if ($code !== '') {
+            $this->model->delete($code);
+        }
         header('Location: index.php?page=categories&msg=deleted');
         exit;
     }

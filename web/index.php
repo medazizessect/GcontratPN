@@ -99,10 +99,11 @@ try {
         };
     } elseif ($page === 'categories') {
         $ctrl = new CategorieController();
+        $code = trim($_GET['code'] ?? (string) ($id ?? ''));
         match ($action) {
             'create' => $ctrl->create(),
-            'edit'   => $ctrl->edit($id ?? 0),
-            'delete' => $ctrl->delete($id ?? 0),
+            'edit'   => $ctrl->edit($code),
+            'delete' => $ctrl->delete(),
             default  => $ctrl->index(),
         };
     } elseif ($page === 'rapports') {
