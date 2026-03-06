@@ -47,7 +47,7 @@ use App\Controllers\AdresseController;
 use App\Controllers\ArrondissementController;
 use App\Controllers\CategorieController;
 use App\Controllers\RapportController;
-use App\Models\Contrat;
+use App\Controllers\DashboardController;
 
 // Routage
 try {
@@ -61,10 +61,7 @@ try {
             default           => $ctrl->login(),
         };
     } elseif ($page === 'dashboard') {
-        $contratModel = new Contrat();
-        require __DIR__ . '/app/Views/layouts/header.php';
-        require __DIR__ . '/app/Views/dashboard/index.php';
-        require __DIR__ . '/app/Views/layouts/footer.php';
+        (new DashboardController())->index();
     } elseif ($page === 'contrats') {
         $ctrl = new ContratController();
         match ($action) {
@@ -110,10 +107,11 @@ try {
     } elseif ($page === 'rapports') {
         $ctrl = new RapportController();
         match ($action) {
-            'contrat' => $ctrl->imprimerContrat($id ?? 0),
-            'liste'   => $ctrl->listeContrats($_GET),
-            'stats'   => $ctrl->statistiques($_GET['annee'] ?? ''),
-            default   => $ctrl->listeContrats([]),
+            'contrat'    => $ctrl->imprimerContrat($id ?? 0),
+            'liste'      => $ctrl->listeContrats($_GET),
+            'stats'      => $ctrl->statistiquesView($_GET['annee'] ?? ''),
+            'stats_pdf'  => $ctrl->statistiques($_GET['annee'] ?? ''),
+            default      => $ctrl->listeContrats([]),
         };
     } else {
         http_response_code(404);

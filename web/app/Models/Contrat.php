@@ -155,15 +155,103 @@ class Contrat
         return $stmt->execute([':id' => $id]);
     }
 
-    public function countBySigned(): array
+    public function countTotal(): int
+    {
+        $stmt = $this->db->query('SELECT COUNT(*) FROM contrats');
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countBySigned(): int
+    {
+        $stmt = $this->db->query('SELECT COUNT(*) FROM contrats WHERE Signature = 1');
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countByRegistered(): int
+    {
+        $stmt = $this->db->query('SELECT COUNT(*) FROM contrats WHERE ValidEnr = 1');
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countByReturned(): int
+    {
+        $stmt = $this->db->query('SELECT COUNT(*) FROM contrats WHERE Retour = 1');
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function sumMontantEnr(): float
+    {
+        $stmt = $this->db->query('SELECT COALESCE(SUM(MontantEnr), 0) FROM contrats WHERE ValidEnr = 1');
+        return (float) $stmt->fetchColumn();
+    }
+
+    public function countByYear(): array
     {
         $stmt = $this->db->query(
-            'SELECT
-               SUM(Signature = 1) AS signes,
-               SUM(Signature = 0) AS non_signes
-             FROM contrats'
+            'SELECT AnneeExc AS annee, COUNT(*) AS total
+             FROM contrats
+             WHERE AnneeExc IS NOT NULL
+             GROUP BY AnneeExc
+             ORDER BY AnneeExc DESC
+             LIMIT 5'
         );
-        return $stmt->fetch();
+        return $stmt->fetchAll();
+    }
+
+    public function countByActivite(int $limit = 5): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT a.LibAct, COUNT(c.id) AS total
+             FROM contrats c
+             JOIN activites a ON c.CodeAct = a.CodeAct
+             GROUP BY c.CodeAct, a.LibAct
+             ORDER BY total DESC
+             LIMIT :limit'
+        );
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function countByMonthCurrentYear(): array
+    {
+        $stmt = $this->db->query(
+            'SELECT MONTH(created_at) AS mois, COUNT(*) AS total
+             FROM contrats
+             WHERE YEAR(created_at) = YEAR(NOW())
+             GROUP BY MONTH(created_at)
+             ORDER BY mois'
+        );
+        return $stmt->fetchAll();
+    }
+
+    public function countByArrondissement(int $limit = 5): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT arr.LibArr, COUNT(c.id) AS total
+             FROM contrats c
+             JOIN adresses adr ON c.CodeAdr = adr.CodeAdr
+             JOIN arrondissements arr ON adr.arrondissement_id = arr.id
+             GROUP BY arr.id, arr.LibArr
+             ORDER BY total DESC
+             LIMIT :limit'
+        );
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function getRecent(int $limit = 10): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT c.id, c.Numero, c.nom, c.DateD, c.Signature, c.MontantEnr
+             FROM contrats c
+             ORDER BY c.created_at DESC
+             LIMIT :limit'
+        );
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
     public function countThisMonth(): int
@@ -173,6 +261,36 @@ class Contrat
              WHERE YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())'
         );
         return (int) $stmt->fetchColumn();
+    }
+
+    public function statsByArrondissement(string $annee = ''): array
+    {
+        $sql = 'SELECT arr.LibArr,
+                       COUNT(c.id) AS total,
+                       COALESCE(SUM(c.MontantEnr), 0) AS sumMontantEnr,
+                       COALESCE(SUM(c.MontantExc), 0) AS sumMontantExc
+                FROM contrats c
+                JOIN adresses adr ON c.CodeAdr = adr.CodeAdr
+                JOIN arrondissements arr ON adr.arrondissement_id = arr.id';
+        $params = [];
+        if ($annee !== '') {
+            $sql .= ' WHERE c.AnneeExc = :annee';
+            $params[':annee'] = $annee;
+        }
+        $sql .= ' GROUP BY arr.id, arr.LibArr ORDER BY total DESC';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function getAvailableYears(): array
+    {
+        $stmt = $this->db->query(
+            'SELECT DISTINCT AnneeExc FROM contrats
+             WHERE AnneeExc IS NOT NULL
+             ORDER BY AnneeExc DESC'
+        );
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
     private function sanitize(array $data): array
