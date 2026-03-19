@@ -1,0 +1,126 @@
+/* GcontratPN — Styles personnalisés RTL */
+
+:root {
+    --primary: #2c3e50;
+    --success: #27ae60;
+    --accent: #3498db;
+}
+
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-size: 1.3rem;
+    letter-spacing: 0.5px;
+}
+
+/* Stat cards */
+.stat-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 12px;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Quick access cards */
+.quick-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 12px;
+    color: #333;
+}
+
+.quick-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+    color: var(--accent);
+}
+
+/* Tables */
+.table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+/* Cards */
+.card {
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    font-size: 0.95rem;
+}
+
+/* Forms */
+.form-label {
+    font-size: 0.875rem;
+    color: #555;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Footer */
+.footer {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+/* Pagination */
+.page-link {
+    color: var(--primary);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* RTL specific adjustments */
+[dir="rtl"] .me-1 { margin-left: 0.25rem !important; margin-right: 0 !important; }
+[dir="rtl"] .me-2 { margin-left: 0.5rem !important;  margin-right: 0 !important; }
+[dir="rtl"] .me-3 { margin-left: 1rem !important;    margin-right: 0 !important; }
+[dir="rtl"] .ms-auto { margin-right: auto !important; margin-left: 0 !important; }
+
+/* Section title indicator */
+.section-indicator {
+    border-right: 4px solid var(--primary);
+    padding-right: 10px;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .btn-group .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
