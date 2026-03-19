@@ -2,9 +2,17 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0"><i class="fas fa-file-contract me-2 text-primary"></i>قائمة العقود</h4>
-    <a href="index.php?page=contrats&action=create" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i>عقد جديد
-    </a>
+    <div class="d-flex gap-2">
+        <a href="index.php?page=rapports&action=liste" class="btn btn-outline-danger btn-sm" target="_blank">
+            <i class="fas fa-file-pdf me-1"></i>قائمة PDF
+        </a>
+        <a href="index.php?page=rapports&action=statistiques" class="btn btn-outline-warning btn-sm" target="_blank">
+            <i class="fas fa-chart-bar me-1"></i>إحصائيات PDF
+        </a>
+        <a href="index.php?page=contrats&action=create" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>عقد جديد
+        </a>
+    </div>
 </div>
 
 <?php if (!empty($_GET['msg'])): ?>
