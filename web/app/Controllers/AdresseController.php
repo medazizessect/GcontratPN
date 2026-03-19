@@ -1,10 +1,5 @@
 <?php
 
-namespace App\Controllers;
-
-use App\Models\Adresse;
-use App\Models\Arrondissement;
-
 class AdresseController
 {
     private Adresse $model;

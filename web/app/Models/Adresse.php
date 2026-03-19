@@ -1,9 +1,5 @@
 <?php
 
-namespace App\Models;
-
-use PDO;
-
 class Adresse
 {
     private PDO $db;

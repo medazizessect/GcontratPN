@@ -1,9 +1,5 @@
 <?php
 
-namespace App\Models;
-
-use PDO;
-
 class Activite
 {
     private PDO $db;

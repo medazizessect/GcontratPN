@@ -1,9 +1,5 @@
 <?php
 
-namespace App\Controllers;
-
-use App\Models\Categorie;
-
 class CategorieController
 {
     private Categorie $model;
