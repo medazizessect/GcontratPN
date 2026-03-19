@@ -12,9 +12,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom styles -->
     <link rel="stylesheet" href="public/css/style.css">
+    <?php if (!empty($loadCharts)): ?>
+    <!-- Chart.js (dashboard only) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <?php endif; ?>
 </head>
 <body>
 <?php if (!empty($_SESSION['user_id'])): ?>
+<?php
+$currentPage = $_GET['page'] ?? 'dashboard';
+$navActive   = fn(string $p) => $currentPage === $p ? 'active' : '';
+$role        = $_SESSION['role'] ?? 'user';
+$roleBadge   = $role === 'admin'
+    ? '<span class="badge bg-danger ms-1">مدير</span>'
+    : '<span class="badge bg-secondary ms-1">مستخدم</span>';
+?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" href="index.php?page=dashboard">
@@ -26,25 +38,34 @@
         <div class="collapse navbar-collapse" id="navMain">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php?page=dashboard"><i class="fas fa-tachometer-alt me-1"></i>لوحة التحكم</a>
+                    <a class="nav-link <?= $navActive('dashboard') ?>" href="index.php?page=dashboard">
+                        <i class="fas fa-tachometer-alt me-1"></i>لوحة التحكم
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php?page=contrats"><i class="fas fa-file-contract me-1"></i>العقود</a>
+                    <a class="nav-link <?= $navActive('contrats') ?>" href="index.php?page=contrats">
+                        <i class="fas fa-file-contract me-1"></i>العقود
+                    </a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="fas fa-cogs me-1"></i>الإعدادات</a>
+                    <a class="nav-link dropdown-toggle <?= in_array($currentPage, ['activites','adresses','arrondissements','categories'], true) ? 'active' : '' ?>"
+                       href="#" data-bs-toggle="dropdown">
+                        <i class="fas fa-cogs me-1"></i>الإعدادات
+                    </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="index.php?page=activites"><i class="fas fa-briefcase me-2"></i>الأنشطة</a></li>
-                        <li><a class="dropdown-item" href="index.php?page=adresses"><i class="fas fa-map-marker-alt me-2"></i>العناوين</a></li>
-                        <li><a class="dropdown-item" href="index.php?page=arrondissements"><i class="fas fa-map me-2"></i>الدوائر</a></li>
-                        <li><a class="dropdown-item" href="index.php?page=categories"><i class="fas fa-tags me-2"></i>الفئات</a></li>
+                        <li><a class="dropdown-item <?= $navActive('activites') ?>" href="index.php?page=activites"><i class="fas fa-briefcase me-2"></i>الأنشطة</a></li>
+                        <li><a class="dropdown-item <?= $navActive('adresses') ?>" href="index.php?page=adresses"><i class="fas fa-map-marker-alt me-2"></i>العناوين</a></li>
+                        <li><a class="dropdown-item <?= $navActive('arrondissements') ?>" href="index.php?page=arrondissements"><i class="fas fa-map me-2"></i>الدوائر</a></li>
+                        <li><a class="dropdown-item <?= $navActive('categories') ?>" href="index.php?page=categories"><i class="fas fa-tags me-2"></i>الفئات</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="fas fa-print me-1"></i>التقارير</a>
+                    <a class="nav-link dropdown-toggle <?= $navActive('rapports') ?>" href="#" data-bs-toggle="dropdown">
+                        <i class="fas fa-print me-1"></i>التقارير
+                    </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="index.php?page=rapports&action=liste"><i class="fas fa-list me-2"></i>قائمة العقود</a></li>
                         <li><a class="dropdown-item" href="index.php?page=rapports&action=stats"><i class="fas fa-chart-bar me-2"></i>الإحصائيات</a></li>
+                        <li><a class="dropdown-item" href="index.php?page=rapports&action=liste"><i class="fas fa-list me-2"></i>قائمة PDF</a></li>
                     </ul>
                 </li>
             </ul>
@@ -52,6 +73,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($_SESSION['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+                        <?= $roleBadge ?>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-start">
                         <li><a class="dropdown-item" href="index.php?page=auth&action=change_password"><i class="fas fa-key me-2"></i>تغيير كلمة المرور</a></li>
